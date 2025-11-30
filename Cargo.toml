@@ -4,3 +4,32 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+bevy = "0.17.3"
+# Restrict logging
+log = { version = "*", features = [
+ "max_level_debug",
+ "release_max_level_warn",
+] }
+
+# Profile optimizations
+[profile.dev]
+opt-level = 1
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+strip = "symbols"
+
+[profile.wasm-release]
+inherits = "release"
+opt-level = "s"
+
+# Linker optimizations
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
+[target.x86_64-pc-windows-msvc]
+linker = "rust-lld.exe"
