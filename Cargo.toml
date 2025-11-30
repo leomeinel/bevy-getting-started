@@ -25,11 +25,3 @@ strip = "symbols"
 [profile.wasm-release]
 inherits = "release"
 opt-level = "s"
-
-# Linker optimizations
-[target.x86_64-unknown-linux-gnu]
-linker = "clang"
-rustflags = ["-C", "link-arg=-fuse-ld=lld"]
-
-[target.x86_64-pc-windows-msvc]
-linker = "rust-lld.exe"
