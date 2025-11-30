@@ -11,12 +11,20 @@ mod getting_started_ecs;
 
 use bevy::prelude::*;
 
-/**
- * Main function
- */
+/// Main function
 fn main() {
-    // https://docs.rs/bevy/latest/bevy/app/struct.App.html
     App::new()
-        .add_systems(Update, getting_started_ecs::print_hello_world)
+        .add_systems(Startup, getting_started_ecs::add_people)
+        .add_systems(
+            Update,
+            (
+                getting_started_ecs::print_hello_world,
+                (
+                    getting_started_ecs::update_people,
+                    getting_started_ecs::greet_people,
+                )
+                    .chain(),
+            ),
+        )
         .run();
 }
