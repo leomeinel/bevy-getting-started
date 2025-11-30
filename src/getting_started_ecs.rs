@@ -7,7 +7,7 @@
  * URL: https://www.apache.org/licenses/LICENSE-2.0
  */
 
-//! ECS examples
+//! ECS
 //!
 //! Source: https://bevy.org/learn/quick-start/getting-started/ecs/
 
