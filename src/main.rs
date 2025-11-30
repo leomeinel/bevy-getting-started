@@ -9,13 +9,13 @@
 
 use bevy::{DefaultPlugins, app::App};
 
-mod getting_started_ecs;
-mod getting_started_plugins;
+mod getting_started;
+mod ui;
 
 /// Main function
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugins(getting_started_plugins::GreetPlugin)
+        .add_plugins(getting_started::plugins::GreetPlugin)
         .run();
 }
