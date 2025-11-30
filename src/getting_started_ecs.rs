@@ -1,5 +1,5 @@
 /*
- * File: getting_started_app.rs
+ * File: getting_started_ecs.rs
  * Author: Leopold Johannes Meinel (leo@meinel.dev)
  * -----
  * Copyright (c) 2025 Leopold Johannes Meinel & contributors

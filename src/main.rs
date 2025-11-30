@@ -7,7 +7,7 @@
  * URL: https://www.apache.org/licenses/LICENSE-2.0
  */
 
-mod getting_started_app;
+mod getting_started_ecs;
 
 use bevy::prelude::*;
 
@@ -17,6 +17,6 @@ use bevy::prelude::*;
 fn main() {
     // https://docs.rs/bevy/latest/bevy/app/struct.App.html
     App::new()
-        .add_systems(Update, getting_started_app::print_hello_world)
+        .add_systems(Update, getting_started_ecs::print_hello_world)
         .run();
 }
