@@ -9,14 +9,33 @@
 
 //! ECS
 //!
-//! Source: https://bevy.org/learn/quick-start/getting-started/ecs/
+//! This also uses the [`Resource`] object
+//!
+//! ### Sources
+//! - https://bevy.org/learn/quick-start/getting-started/ecs/
+//! - https://bevy.org/learn/quick-start/getting-started/resources/
 
-use bevy::prelude::*;
+use bevy::{
+    ecs::{
+        component::Component,
+        query::With,
+        resource::Resource,
+        system::{Commands, Query, Res, ResMut},
+    },
+    time::{Time, Timer},
+};
 
-/// Print Hello World
-pub fn print_hello_world() {
-    println!("Hello World");
-}
+/// Person
+#[derive(Component)]
+pub struct Person;
+
+/// Name
+#[derive(Component)]
+pub struct Name(String);
+
+/// [`Timer`] that controls the delay between greeting messages
+#[derive(Resource)]
+pub struct GreetTimer(pub Timer);
 
 /// Add people
 ///
@@ -25,15 +44,6 @@ pub fn add_people(mut commands: Commands) {
     commands.spawn((Person, Name("Elaina Proctor".to_string())));
     commands.spawn((Person, Name("Renzo Hume".to_string())));
     commands.spawn((Person, Name("Zayna Nieves".to_string())));
-}
-
-/// Greet people
-///
-/// This prints a welcome message for each [`Person`], greeting them with their [`Name`]
-pub fn greet_people(query: Query<&Name, With<Person>>) {
-    for name in &query {
-        println!("Hello {}", name.0);
-    }
 }
 
 /// Update people
@@ -48,10 +58,22 @@ pub fn update_people(mut query: Query<&mut Name, With<Person>>) {
     }
 }
 
-#[derive(Component)]
-/// Person
-pub struct Person;
+/// Greet people
+///
+/// This prints a greeting message for each [`Person`], greeting them with their [`Name`]
+pub fn greet_people(
+    time: Res<Time>,
+    mut timer: ResMut<GreetTimer>,
+    query: Query<&Name, With<Person>>,
+) {
+    if timer.0.tick(time.delta()).just_finished() {
+        for name in &query {
+            println!("Hello {}", name.0);
+        }
+    }
+}
 
-#[derive(Component)]
-/// Name
-pub struct Name(String);
+/// Print Hello World
+pub fn print_hello_world() {
+    println!("Hello World");
+}
