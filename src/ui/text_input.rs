@@ -24,19 +24,17 @@ const OUTLINE_COLOR_INACTIVE: Srgba = tailwind::CYAN_100;
 #[derive(Resource, Deref, DerefMut, Default)]
 pub struct InputMap(HashMap<Entity, Entity>);
 
-/// Output
-///
-/// This contains anything computed from user input
+/// Component that stores the output computed from an input submission
 #[derive(Component, Default)]
 pub struct Output {
+    /// Text from input submission
     text: String,
 }
 
-/// Output
-///
-/// This contains anything computed from user input
+/// Message that gets written on successful input submission
 #[derive(Message)]
 pub struct SubmitOutput {
+    /// Text from input submission
     pub text: String,
 }
 
@@ -80,7 +78,7 @@ pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
 
 /// Read messages of type [`SubmitText`]
 ///
-/// This also writes a [`Message`] [`SubmitOutput`] after a successful submission
+/// This also writes a [`Message`] [`SubmitOutput`] on successful input submission
 pub fn on_submit_text(
     mut commands: Commands,
     mut messages: MessageReader<SubmitText>,
