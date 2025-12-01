@@ -15,44 +15,49 @@
 //! - https://bevy.org/learn/quick-start/getting-started/resources/
 
 use bevy::prelude::*;
-use bevy_simple_text_input::TextInputSystem;
 
-use crate::ui::text_input::{self, InputCache};
+use crate::ui::text_input::{self, SubmitOutput};
 
 /// [`Plugin`] that prints greeting messages
-pub struct GreetPlugin;
+pub struct CharacterPlugin;
 
-impl Plugin for GreetPlugin {
+impl Plugin for CharacterPlugin {
     /// Insert needed resources and add systems
     fn build(&self, app: &mut App) {
         // Insert resources
         app.insert_resource(GreetTimer(Timer::from_seconds(10.0, TimerMode::Repeating)));
-        app.insert_resource(InputCache::default());
+
+        // Add messages
+        app.add_message::<SubmitOutput>();
 
         // Add startup systems
         app.add_systems(Startup, print_hello_world);
-        app.add_systems(Startup, text_input::spawn_ui);
+        app.add_systems(Startup, text_input::setup);
 
         // Add update systems
-        app.add_systems(Update, text_input::on_name_input.after(TextInputSystem));
+        app.add_systems(Update, text_input::on_submit_text);
         app.add_systems(
             Update,
-            text_input::border_update.after(text_input::on_name_input),
+            text_input::update_outline_color.after(text_input::on_submit_text),
         );
-        app.add_systems(Update, greet_people.after(text_input::on_name_input));
+        app.add_systems(Update, on_submit_output);
+        app.add_systems(Update, greet_characters.after(on_submit_output));
     }
 }
 
-/// Add a [`Person`]
+/// Add objects of type [`Character`] from [`SubmitOutput`]
 ///
-/// This adds a bundle of [`Person`] and [`Name`] to [`World`]
-pub fn add_person(world: &mut World, name: String) {
-    world.spawn((Person, Name(name)));
+/// This adds a bundle of [`Character`] and [`Name`] from [`SubmitOutput`]
+fn on_submit_output(mut messages: MessageReader<SubmitOutput>, mut commands: Commands) {
+    for message in messages.read() {
+        let text = message.text.clone();
+        commands.spawn((Character, Name(text)));
+    }
 }
 
-/// Person
+/// Character
 #[derive(Component)]
-struct Person;
+struct Character;
 
 /// Name
 #[derive(Component)]
@@ -62,10 +67,14 @@ struct Name(String);
 #[derive(Resource)]
 struct GreetTimer(pub Timer);
 
-/// Greet people
+/// Greet characters
 ///
-/// This prints a greeting message for each [`Person`], greeting them with the [`Name`] they are bundled with
-fn greet_people(query: Query<&Name, With<Person>>, mut timer: ResMut<GreetTimer>, time: Res<Time>) {
+/// This prints a greeting message for each [`Character`], greeting them with the [`Name`] they are bundled with
+fn greet_characters(
+    query: Query<&Name, With<Character>>,
+    mut timer: ResMut<GreetTimer>,
+    time: Res<Time>,
+) {
     if timer.0.tick(time.delta()).just_finished() {
         for name in &query {
             println!("Hello {}", name.0);
@@ -78,5 +87,5 @@ fn print_hello_world() {
     println!("Hello World");
 }
 
-// TODO: Accumulate added persons as text boxes and add ability to rename each of them.
+// TODO: Accumulate added characters as text boxes and add ability to rename each of them.
 //       This should use a scrollable list.

@@ -7,169 +7,202 @@
  * URL: https://www.apache.org/licenses/LICENSE-2.0
  */
 
-//! Text input [`Node`] with embedded handling of the input
+//! Text input [`Node`]
 //!
-//! Heavily inspired by: https://github.com/rparrett/bevy_simple_text_input/blob/main/examples/focus.rs
+//! Heavily inspired by: https://github.com/ickshonpe/bevy_ui_text_input/blob/master/examples/multiple_inputs.rs
 
-use bevy::{color::palettes::tailwind, input_focus::InputFocus, prelude::*};
-use bevy_simple_text_input::{
-    TextInput, TextInputInactive, TextInputPlaceholder, TextInputSubmitMessage, TextInputTextColor,
-    TextInputTextFont,
+use bevy::{
+    color::palettes::tailwind, input_focus::InputFocus, platform::collections::HashMap, prelude::*,
+};
+use bevy_ui_text_input::{
+    SubmitText, TextInputFilter, TextInputMode, TextInputNode, TextInputPrompt,
 };
 
-use crate::greet;
+const OUTLINE_COLOR_INACTIVE: Srgba = tailwind::CYAN_100;
 
-// Colors
-const BORDER_COLOR_ACTIVE: Srgba = tailwind::CYAN_500;
-const BORDER_COLOR_INACTIVE: Srgba = tailwind::CYAN_100;
-const BORDER_COLOR_ERROR: Srgba = tailwind::RED_500;
-const TEXT_COLOR: Srgba = tailwind::NEUTRAL_100;
-const BACKGROUND_COLOR: Srgba = tailwind::NEUTRAL_800;
+/// Map of input entities to output entities
+#[derive(Resource, Deref, DerefMut, Default)]
+pub struct InputMap(HashMap<Entity, Entity>);
 
-// Parent node
-const PARENT_NODE_ROW_GAP: Val = Val::Px(10.);
-
-// Input
-const INPUT_NODE_WIDTH: Val = Val::Px(400.0);
-const INPUT_NODE_BORDER: UiRect = UiRect::all(Val::Px(2.0));
-const INPUT_NODE_PADDING: UiRect = INPUT_NODE_BORDER;
-const INPUT_FONT_SIZE: f32 = 20.;
-const INPUT_PLACEHOLDER: &str = "Enter name for person";
-
-/// Cache that stores the associated entity
-#[derive(Resource, Default)]
-pub struct InputCache {
-    entity: Option<Entity>,
+/// Output
+///
+/// This contains anything computed from user input
+#[derive(Component, Default)]
+pub struct Output {
+    text: String,
 }
 
-/// Stores whether an error has occurred while processing input
-#[derive(Component)]
-pub struct InputError;
+/// Output
+///
+/// This contains anything computed from user input
+#[derive(Message)]
+pub struct SubmitOutput {
+    pub text: String,
+}
 
-/// Spawn ui with parent [`Node`] and child input [`Node`]
-pub fn spawn_ui(mut commands: Commands, mut cache: ResMut<InputCache>) {
+/// Marker for empty inputs
+#[derive(Component)]
+pub struct EmptyInputMarker;
+
+/// Setup ui and [`InputMap`]
+pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     // Spawn Camera2d to show input node
     commands.spawn(Camera2d);
 
-    // Spawn parent node that fills 100% of screen with child input node
+    let mut map = InputMap::default();
+    let filters: [(Option<TextInputFilter>, &str); 1] = [(None, "Create character")];
+
+    // Spawn parent node containing a child node with a grid. That grid also has child nodes containing the input.
     commands
-        .spawn(Node {
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::Center,
-            flex_direction: FlexDirection::ColumnReverse,
-            row_gap: PARENT_NODE_ROW_GAP,
-            ..default()
-        })
-        .with_children(|parent| {
-            let entity = parent
-                .spawn(input_node_bundle())
-                .observe(on_input_node_click)
-                .id();
-            cache.entity = Some(entity);
-        })
-        .observe(on_background_click);
-}
+        .spawn(parent_node_bundle())
+        .with_children(|commands| {
+            commands
+                .spawn(grid_node_bundle())
+                .with_children(|commands| {
+                    // Spawn a child node for every filter
+                    for (filter, prompt) in filters {
+                        // Spawn input node and insert filter if it is Some
+                        let mut input = commands.spawn(input_node_bundle(&assets, prompt));
+                        if let Some(filter) = filter {
+                            input.insert(filter);
+                        }
 
-/// Listener that adds a bundle of [`Person`] and [`Name`] to [`World`]
-pub fn on_name_input(
-    mut commands: Commands,
-    mut events: MessageReader<TextInputSubmitMessage>,
-    cache: Res<InputCache>,
-) {
-    // Assign entity
-    let Some(entity) = cache.entity else {
-        return;
-    };
-
-    for event in events.read() {
-        let name = event.value.trim().to_string();
-
-        // Exit early if name is empty and set InputError
-        if name.is_empty() {
-            commands.entity(entity).insert(InputError);
-            continue;
-        }
-
-        // Remove InputError
-        commands.entity(entity).remove::<InputError>();
-
-        // Add a person to world with name on each submitted message
-        commands.queue(|world: &mut World| {
-            greet::add_person(world, name);
+                        // Insert into InputMap
+                        let input_entity = input.id();
+                        let output_entity = commands.spawn(Output::default()).id();
+                        map.insert(input_entity, output_entity);
+                    }
+                });
         });
-    }
+    // Insert map as resource
+    commands.insert_resource(map);
 }
 
-/// Update border
-pub fn border_update(
-    cache: Res<InputCache>,
-    focus: Res<InputFocus>,
-    input_error_query: Query<(), With<InputError>>,
-    mut entity_query: Query<(&mut BorderColor, &mut TextInputInactive)>,
+/// Read messages of type [`SubmitText`]
+///
+/// This also writes a [`Message`] [`SubmitOutput`] after a successful submission
+pub fn on_submit_text(
+    mut commands: Commands,
+    mut messages: MessageReader<SubmitText>,
+    mut message_writer: MessageWriter<SubmitOutput>,
+    map: Res<InputMap>,
+    mut output_query: Query<&mut Output>,
 ) {
-    // Assign entity
-    let Some(entity) = cache.entity else {
-        return;
-    };
-    let Ok((mut border_color, mut inactive)) = entity_query.get_mut(entity) else {
-        return;
-    };
-    let has_input_error = input_error_query.contains(entity);
-    let is_focused = focus.0 == Some(entity);
+    for message in messages.read() {
+        if let Some(&output_entity) = map.0.get(&message.entity) {
+            let text = message.text.trim();
 
-    if has_input_error && is_focused {
-        // Focus
-        inactive.0 = false;
-        // Set border_color to error
-        *border_color = BORDER_COLOR_ERROR.into();
-    } else if is_focused {
-        // Focus
-        inactive.0 = false;
-        *border_color = BORDER_COLOR_ACTIVE.into();
-    } else {
-        // Unfocus
-        inactive.0 = true;
-        *border_color = BORDER_COLOR_INACTIVE.into();
+            // Exit early if text is empty and insert EmptyInputMarker
+            if text.is_empty() {
+                commands.entity(output_entity).insert(EmptyInputMarker);
+                continue;
+            }
+
+            // Remove EmptyInputMarker
+            commands.entity(output_entity).remove::<EmptyInputMarker>();
+
+            // Set Output text and write message
+            output_query.get_mut(output_entity).unwrap().text = text.to_string();
+            message_writer.write(SubmitOutput {
+                text: text.to_string(),
+            });
+        }
     }
 }
 
-/// Bundle containing input [`Node`] and additional attributes
-fn input_node_bundle() -> impl Bundle {
+/// Update outline color based on focus and input
+pub fn update_outline_color(
+    input_focus: Res<InputFocus>,
+    mut outline_query: Query<(Entity, &mut Outline)>,
+    output_query: Query<Entity, With<Output>>,
+    empty_query: Query<(), With<EmptyInputMarker>>,
+) {
+    const OUTLINE_COLOR_ERROR: Srgba = tailwind::RED_500;
+    const OUTLINE_COLOR_ACTIVE: Srgba = tailwind::CYAN_500;
+
+    let mut is_empty_input = false;
+
+    // Determine whether any empty input has been submitted
+    for output_entity in output_query {
+        if empty_query.contains(output_entity) {
+            is_empty_input = empty_query.contains(output_entity);
+            break;
+        }
+    }
+
+    // Change outline color based on focus and input
+    for (entity, mut outline) in outline_query.iter_mut() {
+        let is_focused = input_focus.0.is_some_and(|active| active == entity);
+        if is_focused && is_empty_input {
+            outline.color = OUTLINE_COLOR_ERROR.into();
+        } else if is_focused {
+            outline.color = OUTLINE_COLOR_ACTIVE.into();
+        } else {
+            outline.color = OUTLINE_COLOR_INACTIVE.into();
+        }
+    }
+}
+
+/// [`Bundle`] containing parent [`Node`]
+fn parent_node_bundle() -> impl Bundle {
+    Node {
+        width: Val::Percent(100.),
+        height: Val::Percent(100.),
+        justify_content: JustifyContent::Center,
+        align_items: AlignItems::Center,
+        flex_direction: FlexDirection::Column,
+        ..default()
+    }
+}
+
+/// [`Bundle`] containing grid [`Node`]
+fn grid_node_bundle() -> impl Bundle {
+    const COLUMN_SIZE: f32 = 300.;
+    const COLUMN_GAP: Val = Val::Px(20.);
+
+    Node {
+        display: Display::Grid,
+        grid_template_columns: vec![GridTrack::auto(), GridTrack::px(COLUMN_SIZE)],
+        column_gap: COLUMN_GAP,
+        row_gap: COLUMN_GAP,
+        ..default()
+    }
+}
+
+/// [`Bundle`] containing input [`Node`]
+fn input_node_bundle(assets: &Res<AssetServer>, prompt: &str) -> impl Bundle {
+    const MAX_CHARS: Option<usize> = Some(20);
+    const FONT_PATH: &str = "fonts/Fira_Mono/FiraMono-Medium.ttf";
+    const FONT_SIZE: f32 = 20.;
+    const TEXT_COLOR: Srgba = tailwind::NEUTRAL_100;
+    const BACKGROUND_COLOR: Srgba = tailwind::NEUTRAL_800;
+    const WIDTH: Val = Val::Px(300.0);
+    const HEIGHT: Val = Val::Px(30.0);
+    const OUTLINE_WIDTH: Val = Val::Px(2.0);
+
     (
+        TextInputNode {
+            mode: TextInputMode::SingleLine,
+            max_chars: MAX_CHARS,
+            ..default()
+        },
+        TextFont {
+            font: assets.load(FONT_PATH),
+            font_size: FONT_SIZE,
+            ..default()
+        },
+        TextInputPrompt::new(prompt),
+        TextColor(TEXT_COLOR.into()),
         Node {
-            width: INPUT_NODE_WIDTH,
-            border: INPUT_NODE_BORDER,
-            padding: INPUT_NODE_PADDING,
+            width: WIDTH,
+            height: HEIGHT,
             ..default()
         },
-        BorderColor::all(BORDER_COLOR_INACTIVE),
         BackgroundColor(BACKGROUND_COLOR.into()),
-        TextInput,
-        TextInputTextFont(TextFont {
-            font_size: INPUT_FONT_SIZE,
-            ..default()
-        }),
-        TextInputTextColor(TextColor(TEXT_COLOR.into())),
-        TextInputPlaceholder {
-            value: INPUT_PLACEHOLDER.to_string(),
-            ..default()
+        Outline {
+            width: OUTLINE_WIDTH,
+            offset: OUTLINE_WIDTH,
+            color: OUTLINE_COLOR_INACTIVE.into(),
         },
-        TextInputInactive(true),
     )
-}
-
-/// Handle background [`Node`] click
-fn on_background_click(mut trigger: On<Pointer<Click>>, mut focus: ResMut<InputFocus>) {
-    // Disable focus
-    focus.0 = None;
-    trigger.propagate(false);
-}
-
-/// Handle input [`Node`] click
-fn on_input_node_click(mut trigger: On<Pointer<Click>>, mut focus: ResMut<InputFocus>) {
-    // Enable focus
-    focus.0 = Some(trigger.event_target());
-    trigger.propagate(false);
 }

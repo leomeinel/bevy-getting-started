@@ -7,8 +7,8 @@
  * URL: https://www.apache.org/licenses/LICENSE-2.0
  */
 
-use bevy::{input_focus::InputDispatchPlugin, prelude::*};
-use bevy_simple_text_input::TextInputPlugin;
+use bevy::prelude::*;
+use bevy_ui_text_input::TextInputPlugin;
 
 mod greet;
 mod ui;
@@ -17,8 +17,7 @@ mod ui;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugins(InputDispatchPlugin)
         .add_plugins(TextInputPlugin)
-        .add_plugins(greet::GreetPlugin)
+        .add_plugins(greet::CharacterPlugin)
         .run();
 }

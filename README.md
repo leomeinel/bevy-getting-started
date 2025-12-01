@@ -2,6 +2,13 @@
 
 This is a learning project that follows the [Bevy - Getting Started](https://bevy.org/learn/quick-start/getting-started/) guide.
 
+## Mixed license
+
+This repository is not entirely licensed as Apache-2.0.
+
+- Files in `/assets/fonts/Fira_Mono` are taken from [Google Fonts](https://fonts.google.com/specimen/Fira+Mono) and are licensed under [Open Font License](https://fonts.google.com/specimen/Fira+Mono/license). The license can also be found in the directory.
+- Files in `/assets/fonts/Fira_Sans` are taken from [Google Fonts](https://fonts.google.com/specimen/Fira+Sans) and are licensed under [Open Font License](https://fonts.google.com/specimen/Fira+Sans/license). The license can also be found in the directory.
+
 ## Cargo packages
 
 ### Debugging
