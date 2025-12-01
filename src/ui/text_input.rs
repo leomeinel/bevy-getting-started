@@ -42,9 +42,9 @@ pub struct InputCache {
     entity: Option<Entity>,
 }
 
-/// Stores whether invalid input has been submitted
+/// Stores whether an error has occurred while processing input
 #[derive(Component)]
-pub struct InvalidInput;
+pub struct InputError;
 
 /// Spawn ui with parent [`Node`] and child input [`Node`]
 pub fn spawn_ui(mut commands: Commands, mut cache: ResMut<InputCache>) {
@@ -86,14 +86,14 @@ pub fn on_name_input(
     for event in events.read() {
         let name = event.value.trim().to_string();
 
-        // Exit early if name is empty and set InvalidInput
+        // Exit early if name is empty and set InputError
         if name.is_empty() {
-            commands.entity(entity).insert(InvalidInput);
+            commands.entity(entity).insert(InputError);
             continue;
         }
 
-        // Remove InvalidInput
-        commands.entity(entity).remove::<InvalidInput>();
+        // Remove InputError
+        commands.entity(entity).remove::<InputError>();
 
         // Add a person to world with name on each submitted message
         commands.queue(|world: &mut World| {
@@ -106,20 +106,20 @@ pub fn on_name_input(
 pub fn border_update(
     cache: Res<InputCache>,
     focus: Res<InputFocus>,
-    invalid_input_query: Query<(), With<InvalidInput>>,
-    mut query: Query<(&mut BorderColor, &mut TextInputInactive)>,
+    input_error_query: Query<(), With<InputError>>,
+    mut entity_query: Query<(&mut BorderColor, &mut TextInputInactive)>,
 ) {
     // Assign entity
     let Some(entity) = cache.entity else {
         return;
     };
-    let Ok((mut border_color, mut inactive)) = query.get_mut(entity) else {
+    let Ok((mut border_color, mut inactive)) = entity_query.get_mut(entity) else {
         return;
     };
-    let has_invalid_input = invalid_input_query.contains(entity);
+    let has_input_error = input_error_query.contains(entity);
     let is_focused = focus.0 == Some(entity);
 
-    if has_invalid_input && is_focused {
+    if has_input_error && is_focused {
         // Focus
         inactive.0 = false;
         // Set border_color to error
