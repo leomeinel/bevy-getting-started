@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 bevy = "0.17.3"
-bevy_ui_text_input = "0.6.0"
+bevy_simple_text_input = "0.12.0"
 # Restrict logging
 log = { version = "*", features = [
  "max_level_debug",
