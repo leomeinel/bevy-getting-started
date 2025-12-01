@@ -72,7 +72,7 @@ pub fn spawn_ui(mut commands: Commands, mut cache: ResMut<InputCache>) {
         .observe(on_background_click);
 }
 
-/// Listener that adds a person to [`World`] with a name
+/// Listener that adds a bundle of [`Person`] and [`Name`] to [`World`]
 pub fn on_name_input(
     mut commands: Commands,
     mut events: MessageReader<TextInputSubmitMessage>,

@@ -45,7 +45,7 @@ impl Plugin for GreetPlugin {
 
 /// Add a [`Person`]
 ///
-/// This adds a [`Person`] to [`World`] with [`Name`]
+/// This adds a bundle of [`Person`] and [`Name`] to [`World`]
 pub fn add_person(world: &mut World, name: String) {
     world.spawn((Person, Name(name)));
 }
@@ -64,7 +64,7 @@ struct GreetTimer(pub Timer);
 
 /// Greet people
 ///
-/// This prints a greeting message for each [`Person`], greeting them with their [`Name`]
+/// This prints a greeting message for each [`Person`], greeting them with the [`Name`] they are bundled with
 fn greet_people(query: Query<&Name, With<Person>>, mut timer: ResMut<GreetTimer>, time: Res<Time>) {
     if timer.0.tick(time.delta()).just_finished() {
         for name in &query {
