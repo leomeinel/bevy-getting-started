@@ -13,7 +13,7 @@
 
 use bevy::prelude::*;
 
-use crate::ui::text_input::TextInputSuccess;
+use crate::ui::text_input::{TextInputError, TextInputSuccess};
 
 /// Plugin
 pub(super) fn plugin(app: &mut App) {
@@ -45,6 +45,7 @@ struct GreetTimer(Timer);
 fn on_submit_output(
     npc_query: Query<&Name, With<Npc>>,
     mut messages: MessageReader<TextInputSuccess>,
+    mut error_writer: MessageWriter<TextInputError>,
     mut commands: Commands,
 ) {
     for message in messages.read() {
@@ -52,6 +53,9 @@ fn on_submit_output(
         // Exit early if a character with the same name already exists
         for name in &npc_query {
             if name.0 == text {
+                error_writer.write(TextInputError {
+                    entity: message.entity,
+                });
                 return;
             }
         }

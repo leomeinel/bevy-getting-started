@@ -11,9 +11,7 @@
 //!
 //! Heavily inspired by: https://github.com/ickshonpe/bevy_ui_text_input/blob/master/examples/multiple_inputs.rs
 
-use bevy::{
-    color::palettes::tailwind, input_focus::InputFocus, platform::collections::HashMap, prelude::*,
-};
+use bevy::{color::palettes::tailwind, input_focus::InputFocus, prelude::*};
 use bevy_ui_text_input::{
     SubmitText, TextInputFilter, TextInputMode, TextInputNode, TextInputPrompt,
 };
@@ -21,42 +19,45 @@ use bevy_ui_text_input::{
 /// Plugin
 pub(super) fn plugin(app: &mut App) {
     // Add messages
+    app.add_message::<TextInputError>();
     app.add_message::<TextInputSuccess>();
 
     // Add startup systems
     app.add_systems(Startup, setup);
 
     // Add update systems
-    app.add_systems(Update, (on_submit_text, update_outline_color).chain());
+    app.add_systems(
+        Update,
+        (
+            on_submit_text,
+            update_focus,
+            update_on_error,
+            update_on_success,
+        ),
+    );
 }
 
+// Outline colors
+const OUTLINE_COLOR_ACTIVE: Srgba = tailwind::CYAN_500;
+const OUTLINE_COLOR_ERROR: Srgba = tailwind::RED_500;
 const OUTLINE_COLOR_INACTIVE: Srgba = tailwind::CYAN_100;
 
-/// Map of input entities to output entities
-#[derive(Resource, Deref, DerefMut, Default)]
-struct InputMap(HashMap<Entity, Entity>);
-
-/// Component that stores the output computed from an input submission
-#[derive(Component, Default)]
-struct Output {
-    /// Text from input submission
-    text: String,
+/// Message that gets written on successful input submission
+#[derive(Message)]
+pub(crate) struct TextInputError {
+    pub(crate) entity: Entity,
 }
 
 /// Message that gets written on successful input submission
 #[derive(Message)]
 pub(crate) struct TextInputSuccess {
+    pub(crate) entity: Entity,
     /// Text from input submission
     pub(crate) text: String,
 }
 
-/// Marker for empty inputs
-#[derive(Component)]
-struct EmptyInputMarker;
-
-/// Setup ui and [`InputMap`]
+/// Setup ui and [`InputVec`]
 fn setup(mut commands: Commands, assets: Res<AssetServer>) {
-    let mut map = InputMap::default();
     let filters: [(Option<TextInputFilter>, &str); 1] = [(None, "Create Npc")];
 
     // Spawn parent node containing a child node with a grid. That grid also has child nodes containing the input.
@@ -73,79 +74,85 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
                         if let Some(filter) = filter {
                             input.insert(filter);
                         }
-
-                        // Insert into InputMap
-                        let input_entity = input.id();
-                        let output_entity = commands.spawn(Output::default()).id();
-                        map.insert(input_entity, output_entity);
                     }
                 });
         });
-    // Insert map as resource
-    commands.insert_resource(map);
 }
 
 /// Read messages of type [`SubmitText`]
 ///
 /// This also writes a [`Message`] [`TextInputSuccess`] on successful input submission
 fn on_submit_text(
-    mut output_query: Query<&mut Output>,
-    mut commands: Commands,
     mut messages: MessageReader<SubmitText>,
-    mut message_writer: MessageWriter<TextInputSuccess>,
-    map: Res<InputMap>,
+    mut error_writer: MessageWriter<TextInputError>,
+    mut success_writer: MessageWriter<TextInputSuccess>,
 ) {
     for message in messages.read() {
-        if let Some(&output_entity) = map.0.get(&message.entity) {
-            let text = message.text.trim();
+        let text = message.text.trim();
 
-            // Exit early if text is empty and insert EmptyInputMarker
-            if text.is_empty() {
-                commands.entity(output_entity).insert(EmptyInputMarker);
-                continue;
-            }
-
-            // Remove EmptyInputMarker
-            commands.entity(output_entity).remove::<EmptyInputMarker>();
-
-            // Set Output text and write message
-            output_query.get_mut(output_entity).unwrap().text = text.to_string();
-            message_writer.write(TextInputSuccess {
-                text: text.to_string(),
+        if text.is_empty() {
+            // Write TextInputError
+            error_writer.write(TextInputError {
+                entity: message.entity,
             });
+            continue;
         }
+
+        // Write TextInputSuccess
+        success_writer.write(TextInputSuccess {
+            entity: message.entity,
+            text: text.to_string(),
+        });
     }
 }
 
-/// Update outline color based on focus and input
-fn update_outline_color(
-    mut outline_query: Query<(Entity, &mut Outline)>,
-    output_query: Query<Entity, With<Output>>,
-    empty_query: Query<(), With<EmptyInputMarker>>,
-    input_focus: Res<InputFocus>,
-) {
-    const OUTLINE_COLOR_ERROR: Srgba = tailwind::RED_500;
-    const OUTLINE_COLOR_ACTIVE: Srgba = tailwind::CYAN_500;
-
-    let mut is_empty_input = false;
-
-    // Determine whether any empty input has been submitted
-    for output_entity in output_query {
-        if empty_query.contains(output_entity) {
-            is_empty_input = empty_query.contains(output_entity);
-            break;
-        }
+/// Update outline color based on focus
+fn update_focus(mut outline_query: Query<(Entity, &mut Outline)>, input_focus: Res<InputFocus>) {
+    // Exit early if input focus has not changed
+    if !input_focus.is_changed() {
+        return;
     }
 
     // Change outline color based on focus and input
     for (entity, mut outline) in outline_query.iter_mut() {
-        let is_focused = input_focus.0.is_some_and(|active| active == entity);
-        if is_focused && is_empty_input {
-            outline.color = OUTLINE_COLOR_ERROR.into();
-        } else if is_focused {
+        if input_focus.0.is_some_and(|active| active == entity) {
             outline.color = OUTLINE_COLOR_ACTIVE.into();
         } else {
             outline.color = OUTLINE_COLOR_INACTIVE.into();
+        }
+    }
+}
+
+/// Update outline color based on input error
+fn update_on_error(
+    mut messages: MessageReader<TextInputError>,
+    mut outline_query: Query<(Entity, &mut Outline)>,
+) {
+    for message in messages.read() {
+        for (entity, mut outline) in outline_query.iter_mut() {
+            // Continue if the entity of message does not match entity
+            if message.entity != entity {
+                continue;
+            }
+
+            outline.color = OUTLINE_COLOR_ERROR.into();
+        }
+    }
+}
+
+/// Update outline color based on input success
+fn update_on_success(
+    mut messages: MessageReader<TextInputSuccess>,
+    mut outline_query: Query<(Entity, &mut Outline)>,
+) {
+    for message in messages.read() {
+        for (entity, mut outline) in outline_query.iter_mut() {
+            // Continue if the entity of message does not match entity
+            if message.entity != entity {
+                continue;
+            }
+
+            outline.color = OUTLINE_COLOR_ACTIVE.into();
         }
     }
 }
