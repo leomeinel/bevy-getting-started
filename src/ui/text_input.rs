@@ -21,7 +21,7 @@ use bevy_ui_text_input::{
 /// Plugin
 pub(super) fn plugin(app: &mut App) {
     // Add messages
-    app.add_message::<SubmitOutput>();
+    app.add_message::<TextInputSuccess>();
 
     // Add startup systems
     app.add_systems(Startup, setup);
@@ -45,7 +45,7 @@ struct Output {
 
 /// Message that gets written on successful input submission
 #[derive(Message)]
-pub(crate) struct SubmitOutput {
+pub(crate) struct TextInputSuccess {
     /// Text from input submission
     pub(crate) text: String,
 }
@@ -87,12 +87,12 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
 
 /// Read messages of type [`SubmitText`]
 ///
-/// This also writes a [`Message`] [`SubmitOutput`] on successful input submission
+/// This also writes a [`Message`] [`TextInputSuccess`] on successful input submission
 fn on_submit_text(
     mut output_query: Query<&mut Output>,
     mut commands: Commands,
     mut messages: MessageReader<SubmitText>,
-    mut message_writer: MessageWriter<SubmitOutput>,
+    mut message_writer: MessageWriter<TextInputSuccess>,
     map: Res<InputMap>,
 ) {
     for message in messages.read() {
@@ -110,7 +110,7 @@ fn on_submit_text(
 
             // Set Output text and write message
             output_query.get_mut(output_entity).unwrap().text = text.to_string();
-            message_writer.write(SubmitOutput {
+            message_writer.write(TextInputSuccess {
                 text: text.to_string(),
             });
         }

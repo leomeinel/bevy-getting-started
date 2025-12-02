@@ -13,7 +13,7 @@
 
 use bevy::prelude::*;
 
-use crate::ui::text_input::SubmitOutput;
+use crate::ui::text_input::TextInputSuccess;
 
 /// Plugin
 pub(super) fn plugin(app: &mut App) {
@@ -39,12 +39,12 @@ struct Name(String);
 #[derive(Resource)]
 struct GreetTimer(Timer);
 
-/// Add objects of type [`Npc`] from [`SubmitOutput`]
+/// Add objects of type [`Npc`] from [`TextInputSuccess`]
 ///
-/// This adds a bundle of [`Npc`] and [`Name`] from [`SubmitOutput`]
+/// This adds a bundle of [`Npc`] and [`Name`] from [`TextInputSuccess`]
 fn on_submit_output(
     npc_query: Query<&Name, With<Npc>>,
-    mut messages: MessageReader<SubmitOutput>,
+    mut messages: MessageReader<TextInputSuccess>,
     mut commands: Commands,
 ) {
     for message in messages.read() {
