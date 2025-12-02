@@ -18,37 +18,46 @@ use bevy_ui_text_input::{
     SubmitText, TextInputFilter, TextInputMode, TextInputNode, TextInputPrompt,
 };
 
+/// Plugin
+pub(super) fn plugin(app: &mut App) {
+    // Add messages
+    app.add_message::<SubmitOutput>();
+
+    // Add startup systems
+    app.add_systems(Startup, setup);
+
+    // Add update systems
+    app.add_systems(Update, (on_submit_text, update_outline_color).chain());
+}
+
 const OUTLINE_COLOR_INACTIVE: Srgba = tailwind::CYAN_100;
 
 /// Map of input entities to output entities
 #[derive(Resource, Deref, DerefMut, Default)]
-pub struct InputMap(HashMap<Entity, Entity>);
+struct InputMap(HashMap<Entity, Entity>);
 
 /// Component that stores the output computed from an input submission
 #[derive(Component, Default)]
-pub struct Output {
+struct Output {
     /// Text from input submission
     text: String,
 }
 
 /// Message that gets written on successful input submission
 #[derive(Message)]
-pub struct SubmitOutput {
+pub(crate) struct SubmitOutput {
     /// Text from input submission
-    pub text: String,
+    pub(crate) text: String,
 }
 
 /// Marker for empty inputs
 #[derive(Component)]
-pub struct EmptyInputMarker;
+struct EmptyInputMarker;
 
 /// Setup ui and [`InputMap`]
-pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
-    // Spawn Camera2d to show input node
-    commands.spawn(Camera2d);
-
+fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     let mut map = InputMap::default();
-    let filters: [(Option<TextInputFilter>, &str); 1] = [(None, "Create character")];
+    let filters: [(Option<TextInputFilter>, &str); 1] = [(None, "Create Npc")];
 
     // Spawn parent node containing a child node with a grid. That grid also has child nodes containing the input.
     commands
@@ -79,12 +88,12 @@ pub fn setup(mut commands: Commands, assets: Res<AssetServer>) {
 /// Read messages of type [`SubmitText`]
 ///
 /// This also writes a [`Message`] [`SubmitOutput`] on successful input submission
-pub fn on_submit_text(
+fn on_submit_text(
+    mut output_query: Query<&mut Output>,
     mut commands: Commands,
     mut messages: MessageReader<SubmitText>,
     mut message_writer: MessageWriter<SubmitOutput>,
     map: Res<InputMap>,
-    mut output_query: Query<&mut Output>,
 ) {
     for message in messages.read() {
         if let Some(&output_entity) = map.0.get(&message.entity) {
@@ -109,11 +118,11 @@ pub fn on_submit_text(
 }
 
 /// Update outline color based on focus and input
-pub fn update_outline_color(
-    input_focus: Res<InputFocus>,
+fn update_outline_color(
     mut outline_query: Query<(Entity, &mut Outline)>,
     output_query: Query<Entity, With<Output>>,
     empty_query: Query<(), With<EmptyInputMarker>>,
+    input_focus: Res<InputFocus>,
 ) {
     const OUTLINE_COLOR_ERROR: Srgba = tailwind::RED_500;
     const OUTLINE_COLOR_ACTIVE: Srgba = tailwind::CYAN_500;

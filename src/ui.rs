@@ -7,4 +7,14 @@
  * URL: https://www.apache.org/licenses/LICENSE-2.0
  */
 
-pub mod text_input;
+//! Ui handler
+
+use bevy::prelude::*;
+
+pub(crate) mod text_input;
+
+/// Plugin
+pub(super) fn plugin(app: &mut App) {
+    // Add plugins
+    app.add_plugins(text_input::plugin);
+}
