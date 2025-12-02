@@ -56,9 +56,12 @@ pub(crate) struct TextInputSuccess {
     pub(crate) text: String,
 }
 
-/// Setup ui and [`InputVec`]
+/// Setup ui
 fn setup(mut commands: Commands, assets: Res<AssetServer>) {
-    let filters: [(Option<TextInputFilter>, &str); 1] = [(None, "Create Npc")];
+    let filters = [(
+        Some(TextInputFilter::custom(is_alphanumeric_or_whitespace)),
+        "Create Npc",
+    )];
 
     // Spawn parent node containing a child node with a grid. That grid also has child nodes containing the input.
     commands
@@ -155,6 +158,12 @@ fn update_on_success(
             outline.color = OUTLINE_COLOR_ACTIVE.into();
         }
     }
+}
+
+/// Check if text is alphanumeric or whitespace
+fn is_alphanumeric_or_whitespace(text: &str) -> bool {
+    text.chars()
+        .all(|c| c.is_ascii_alphanumeric() || c.is_ascii_whitespace())
 }
 
 /// [`Bundle`] containing parent [`Node`]
