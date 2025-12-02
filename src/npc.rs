@@ -11,20 +11,24 @@
 //!
 //! Heavily inspired by: https://bevy.org/learn/quick-start/getting-started
 
-use bevy::prelude::*;
+use bevy::{color::palettes::tailwind, platform::collections::HashMap, prelude::*};
+use bevy_ui_text_input::{TextInputFilter, TextInputMode, TextInputNode, TextInputPrompt};
 
-use crate::ui::text_input::{TextInputError, TextInputSuccess};
+use crate::ui::{
+    grid_bundle::{self, GridNodeMarker0, GridNodeMarker1},
+    text_input::{self, TextInputError, TextInputSuccess},
+};
 
 /// Plugin
 pub(super) fn plugin(app: &mut App) {
     // Insert resources
-    app.insert_resource(GreetTimer(Timer::from_seconds(10.0, TimerMode::Repeating)));
+    app.insert_resource(TextInputMap::default());
 
     // Add startup systems
-    app.add_systems(Startup, print_hello_world);
+    app.add_systems(Startup, setup.after(grid_bundle::setup));
 
     // Add update systems
-    app.add_systems(Update, (on_submit_output, greet_npcs).chain());
+    app.add_systems(Update, (create_npc_on_input, create_npc_text_inputs));
 }
 
 /// Npc
@@ -35,17 +39,34 @@ struct Npc;
 #[derive(Component)]
 struct Name(String);
 
-/// [`Timer`] that controls the delay between greeting messages
-#[derive(Resource)]
-struct GreetTimer(Timer);
+/// Text input map
+///
+/// This contains any text input that is mapped to an [`Npc`]
+#[derive(Resource, Default)]
+struct TextInputMap(HashMap<Entity, Entity>);
+
+/// Spawn text input for creating a new [`Npc`]
+fn setup(
+    grid_node_query: Single<Entity, With<GridNodeMarker0>>,
+    mut commands: Commands,
+    assets: Res<AssetServer>,
+) {
+    let grid_entity = grid_node_query.entity();
+
+    commands.entity(grid_entity).with_children(|commands| {
+        commands
+            .spawn(input_bundle(&assets, "Create Npc"))
+            .insert(input_filter());
+    });
+}
 
 /// Add objects of type [`Npc`] from [`TextInputSuccess`]
 ///
 /// This adds a bundle of [`Npc`] and [`Name`] from [`TextInputSuccess`]
-fn on_submit_output(
-    npc_query: Query<&Name, With<Npc>>,
+fn create_npc_on_input(
     mut messages: MessageReader<TextInputSuccess>,
     mut error_writer: MessageWriter<TextInputError>,
+    npc_query: Query<&Name, With<Npc>>,
     mut commands: Commands,
 ) {
     for message in messages.read() {
@@ -59,24 +80,78 @@ fn on_submit_output(
                 return;
             }
         }
-        commands.spawn((Npc, Name(text)));
+        commands.spawn((Npc, Name(text.clone())));
     }
 }
 
-/// Greet npcs
-///
-/// This prints a greeting message for each [`Npc`], greeting them with the [`Name`] they are bundled with
-fn greet_npcs(npc_query: Query<&Name, With<Npc>>, mut timer: ResMut<GreetTimer>, time: Res<Time>) {
-    if timer.0.tick(time.delta()).just_finished() {
-        for name in &npc_query {
-            println!("Hello {}", name.0);
+/// Create the text inputs for renaming every [`Npc`]
+fn create_npc_text_inputs(
+    grid_node_query: Single<Entity, With<GridNodeMarker1>>,
+    npc_query: Query<(Entity, &Name), With<Npc>>,
+    mut commands: Commands,
+    mut map: ResMut<TextInputMap>,
+    assets: Res<AssetServer>,
+) {
+    for (npc_entity, name) in &npc_query {
+        // Continue if TextInputs already contains Name
+        if map.0.contains_key(&npc_entity) {
+            continue;
         }
+
+        let grid_entity = grid_node_query.entity();
+
+        let prompt = format!("Rename {}", name.0);
+        commands.entity(grid_entity).with_children(|commands| {
+            let entity = commands
+                .spawn(input_bundle(&assets, prompt.as_str()))
+                .insert(input_filter())
+                .id();
+            map.0.insert(npc_entity, entity);
+        });
     }
 }
 
-/// Print Hello World
-fn print_hello_world() {
-    println!("Hello World");
+/// [`Bundle`] containing input [`Node`]
+fn input_bundle(assets: &Res<AssetServer>, prompt: &str) -> impl Bundle {
+    (
+        TextInputNode {
+            mode: TextInputMode::SingleLine,
+            max_chars: Some(20),
+            ..default()
+        },
+        TextFont {
+            font: assets.load("fonts/Fira_Mono/FiraMono-Medium.ttf"),
+            font_size: 20.,
+            ..default()
+        },
+        TextInputPrompt::new(prompt),
+        TextColor(tailwind::NEUTRAL_100.into()),
+        Node {
+            width: Val::Px(300.0),
+            height: Val::Px(30.0),
+            margin: UiRect::all(Val::Px(10.)),
+            ..default()
+        },
+        BackgroundColor(tailwind::NEUTRAL_800.into()),
+        Outline {
+            width: Val::Px(2.0),
+            offset: Val::Px(2.0),
+            color: text_input::OUTLINE_COLOR_INACTIVE.into(),
+        },
+    )
+}
+
+/// Input filter
+///
+/// This filters for anything that is alphanumeric or whitespace.
+fn input_filter() -> TextInputFilter {
+    TextInputFilter::custom(is_alphanumeric_or_whitespace)
+}
+
+/// Check if text is alphanumeric or whitespace
+fn is_alphanumeric_or_whitespace(text: &str) -> bool {
+    text.chars()
+        .all(|c| c.is_ascii_alphanumeric() || c.is_ascii_whitespace())
 }
 
 // TODO: Accumulate added npcs as text boxes and add ability to rename each of them.
