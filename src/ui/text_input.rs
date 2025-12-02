@@ -58,7 +58,7 @@ pub(crate) struct TextInputSuccess {
 
 /// Setup ui
 fn setup(mut commands: Commands, assets: Res<AssetServer>) {
-    let filters = [(
+    let nodes = [(
         Some(TextInputFilter::custom(is_alphanumeric_or_whitespace)),
         "Create Npc",
     )];
@@ -71,7 +71,7 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
                 .spawn(grid_node_bundle())
                 .with_children(|commands| {
                     // Spawn a child node for every filter
-                    for (filter, prompt) in filters {
+                    for (filter, prompt) in nodes {
                         // Spawn input node and insert filter if it is Some
                         let mut input = commands.spawn(input_node_bundle(&assets, prompt));
                         if let Some(filter) = filter {
