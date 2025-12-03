@@ -17,19 +17,11 @@ use bevy_ui_text_input::SubmitText;
 /// Plugin
 pub(super) fn plugin(app: &mut App) {
     // Add messages
-    app.add_message::<TextInputError>();
-    app.add_message::<TextInputSuccess>();
+    app.add_message::<InputError>();
+    app.add_message::<InputSuccess>();
 
     // Add update systems
-    app.add_systems(
-        Update,
-        (
-            on_submit_text,
-            update_focus,
-            update_on_error,
-            update_on_success,
-        ),
-    );
+    app.add_systems(Update, (on_submit, focus, on_error, on_success));
 }
 
 // Outline colors
@@ -39,13 +31,15 @@ pub(crate) const OUTLINE_COLOR_INACTIVE: Srgba = tailwind::CYAN_100;
 
 /// Message that gets written on successful input submission
 #[derive(Message)]
-pub(crate) struct TextInputError {
+pub(crate) struct InputError {
+    /// Entity of unsuccessful input
     pub(crate) entity: Entity,
 }
 
 /// Message that gets written on successful input submission
 #[derive(Message)]
-pub(crate) struct TextInputSuccess {
+pub(crate) struct InputSuccess {
+    /// Entity of successful input
     pub(crate) entity: Entity,
     /// Text from input submission
     pub(crate) text: String,
@@ -53,40 +47,39 @@ pub(crate) struct TextInputSuccess {
 
 /// Read messages of type [`SubmitText`]
 ///
-/// This also writes a [`Message`] [`TextInputSuccess`] on successful input submission
-fn on_submit_text(
-    mut messages: MessageReader<SubmitText>,
-    mut error_writer: MessageWriter<TextInputError>,
-    mut success_writer: MessageWriter<TextInputSuccess>,
+/// This also writes a [`Message`] [`InputSuccess`] on successful input submission
+fn on_submit(
+    mut msgs: MessageReader<SubmitText>,
+    mut error_msg: MessageWriter<InputError>,
+    mut success_msg: MessageWriter<InputSuccess>,
 ) {
-    for message in messages.read() {
-        let text = message.text.trim();
+    for msg in msgs.read() {
+        let entity = msg.entity;
+        let text = msg.text.trim();
 
         if text.is_empty() {
-            // Write TextInputError
-            error_writer.write(TextInputError {
-                entity: message.entity,
-            });
+            // Write InputError
+            error_msg.write(InputError { entity });
             continue;
         }
 
-        // Write TextInputSuccess
-        success_writer.write(TextInputSuccess {
-            entity: message.entity,
+        // Write InputSuccess
+        success_msg.write(InputSuccess {
+            entity,
             text: text.to_string(),
         });
     }
 }
 
 /// Update outline color based on focus
-fn update_focus(mut query: Query<(Entity, &mut Outline)>, input_focus: Res<InputFocus>) {
+fn focus(mut outline_q: Query<(Entity, &mut Outline)>, input_focus: Res<InputFocus>) {
     // Exit early if input focus has not changed
     if !input_focus.is_changed() {
         return;
     }
 
     // Change outline color based on focus and input
-    for (entity, mut outline) in query.iter_mut() {
+    for (entity, mut outline) in outline_q.iter_mut() {
         if input_focus.0.is_some_and(|active| active == entity) {
             outline.color = OUTLINE_COLOR_ACTIVE.into();
         } else {
@@ -96,14 +89,11 @@ fn update_focus(mut query: Query<(Entity, &mut Outline)>, input_focus: Res<Input
 }
 
 /// Update outline color based on input error
-fn update_on_error(
-    mut messages: MessageReader<TextInputError>,
-    mut query: Query<(Entity, &mut Outline)>,
-) {
-    for message in messages.read() {
-        for (entity, mut outline) in query.iter_mut() {
-            // Continue if the entity of message does not match entity
-            if message.entity != entity {
+fn on_error(mut msgs: MessageReader<InputError>, mut outline_q: Query<(Entity, &mut Outline)>) {
+    for msg in msgs.read() {
+        for (outline_e, mut outline) in outline_q.iter_mut() {
+            // Continue if the entity of msg does not match entity
+            if msg.entity != outline_e {
                 continue;
             }
 
@@ -113,14 +103,11 @@ fn update_on_error(
 }
 
 /// Update outline color based on input success
-fn update_on_success(
-    mut messages: MessageReader<TextInputSuccess>,
-    mut query: Query<(Entity, &mut Outline)>,
-) {
-    for message in messages.read() {
-        for (entity, mut outline) in query.iter_mut() {
-            // Continue if the entity of message does not match entity
-            if message.entity != entity {
+fn on_success(mut msgs: MessageReader<InputSuccess>, mut outline_q: Query<(Entity, &mut Outline)>) {
+    for msg in msgs.read() {
+        for (outline_e, mut outline) in outline_q.iter_mut() {
+            // Continue if the entity of msg does not match entity
+            if msg.entity != outline_e {
                 continue;
             }
 
