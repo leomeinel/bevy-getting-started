@@ -34,7 +34,11 @@ run_wasm() {
 
 # Run specific build for given argument
 if [[ -z "${1}" ]]; then
-    cargo run --release
+    if [[ "${XDG_SESSION_TYPE}" == "wayland" ]]; then
+        cargo run --release --features wayland
+    else
+        cargo run --release --features x11
+    fi
 elif [[ "${1}" == "wasm" ]]; then
     "${SCRIPT_DIR}"/build.sh "${1}"
     run_wasm
@@ -42,5 +46,9 @@ elif [[ "${1}" == "wasm-dev" ]]; then
     "${SCRIPT_DIR}"/build.sh "${1}"
     run_wasm
 else
-    cargo run --features bevy/dynamic_linking
+    if [[ "${XDG_SESSION_TYPE}" == "wayland" ]]; then
+        cargo run --release --features wayland,bevy/dynamic_linking
+    else
+        cargo run --release --features x11,bevy/dynamic_linking
+    fi
 fi
