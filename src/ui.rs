@@ -11,11 +11,11 @@
 
 use bevy::prelude::*;
 
-pub(crate) mod grid_bundle;
+pub(crate) mod grid;
 pub(crate) mod text_input;
 
 /// Plugin
 pub(super) fn plugin(app: &mut App) {
     // Add plugins
-    app.add_plugins((grid_bundle::plugin, text_input::plugin));
+    app.add_plugins((grid::plugin, text_input::plugin));
 }

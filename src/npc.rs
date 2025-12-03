@@ -15,7 +15,7 @@ use bevy::{color::palettes::tailwind, platform::collections::HashMap, prelude::*
 use bevy_ui_text_input::{TextInputFilter, TextInputMode, TextInputNode, TextInputPrompt};
 
 use crate::ui::{
-    grid_bundle::{self, GridNodeMarker0, GridNodeMarker1},
+    grid::{self, GridNodeMarker0, GridNodeMarker1},
     text_input::{self, TextInputError, TextInputSuccess},
 };
 
@@ -25,7 +25,7 @@ pub(super) fn plugin(app: &mut App) {
     app.insert_resource(TextInputMap::default());
 
     // Add startup systems
-    app.add_systems(Startup, setup.after(grid_bundle::setup));
+    app.add_systems(Startup, setup.after(grid::setup));
 
     // Add update systems
     app.add_systems(Update, (create_npc_on_input, create_npc_text_inputs));
@@ -56,7 +56,7 @@ fn setup(
 
     commands.entity(grid_entity).with_children(|commands| {
         commands
-            .spawn(input_bundle(&assets, "Create Npc"))
+            .spawn(text_input(&assets, "Create Npc"))
             .insert(input_filter());
     });
 }
@@ -104,7 +104,7 @@ fn create_npc_text_inputs(
         let prompt = format!("Rename {}", name.0);
         commands.entity(grid_entity).with_children(|commands| {
             let entity = commands
-                .spawn(input_bundle(&assets, prompt.as_str()))
+                .spawn(text_input(&assets, prompt.as_str()))
                 .insert(input_filter())
                 .id();
             map.0.insert(npc_entity, entity);
@@ -113,7 +113,7 @@ fn create_npc_text_inputs(
 }
 
 /// [`Bundle`] containing input [`Node`]
-fn input_bundle(assets: &Res<AssetServer>, prompt: &str) -> impl Bundle {
+fn text_input(assets: &Res<AssetServer>, prompt: &str) -> impl Bundle {
     (
         TextInputNode {
             mode: TextInputMode::SingleLine,

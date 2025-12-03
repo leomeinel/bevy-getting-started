@@ -1,5 +1,5 @@
 /*
- * File: grid_bundle.rs
+ * File: grid.rs
  * Author: Leopold Johannes Meinel (leo@meinel.dev)
  * -----
  * Copyright (c) 2025 Leopold Johannes Meinel & contributors
@@ -7,7 +7,7 @@
  * URL: https://www.apache.org/licenses/LICENSE-2.0
  */
 
-//! Grid bundle
+//! Grid
 
 use bevy::prelude::*;
 
@@ -29,17 +29,17 @@ pub struct GridNodeMarker0;
 #[derive(Component)]
 pub struct GridNodeMarker1;
 
-/// Spawn a parent [`Bundle`], a bottom [`grid_bundle`] and a top [`grid_bundle`]
+/// Spawn a parent [`Bundle`], a bottom [`grid`] and a top [`grid`]
 pub(crate) fn setup(mut commands: Commands) {
-    // Spawn parent bundle containing a child bundle with a grid.
-    commands.spawn(parent_bundle()).with_children(|commands| {
-        commands.spawn((grid_bundle(), GridNodeMarker0));
-        commands.spawn((grid_bundle(), GridNodeMarker1));
+    // Spawn grid_container bundle containing a child bundle with a grid.
+    commands.spawn(grid_container()).with_children(|commands| {
+        commands.spawn((grid(), GridNodeMarker0));
+        commands.spawn((grid(), GridNodeMarker1));
     });
 }
 
 /// [`Bundle`] containing parent [`Node`]
-fn parent_bundle() -> impl Bundle {
+fn grid_container() -> impl Bundle {
     Node {
         display: Display::Flex,
         width: Val::Percent(100.),
@@ -52,7 +52,7 @@ fn parent_bundle() -> impl Bundle {
 }
 
 /// [`Bundle`] containing grid [`Node`]
-fn grid_bundle() -> impl Bundle {
+fn grid() -> impl Bundle {
     Node {
         display: Display::Grid,
         width: Val::Px(300.0),
