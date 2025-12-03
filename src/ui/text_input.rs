@@ -73,7 +73,7 @@ fn on_submit(
 
 /// Update outline color based on focus
 fn focus(mut outline_q: Query<(Entity, &mut Outline)>, input_focus: Res<InputFocus>) {
-    // Exit early if input focus has not changed
+    // Return if input focus has not changed
     if !input_focus.is_changed() {
         return;
     }
