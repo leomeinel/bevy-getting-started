@@ -44,7 +44,7 @@ struct Name(String);
 /// This contains any text input that is mapped to an [`Npc`].
 /// These text inputs are meant as a way to change the [`Name`] of an [`Npc`].
 #[derive(Resource, Default)]
-struct TextInputMap(HashMap<Entity, Entity>);
+struct TextInputMap(HashMap<Entity, (Entity, Entity)>);
 
 /// Spawn text input for creating a new [`Npc`]
 fn setup(
@@ -55,6 +55,7 @@ fn setup(
     let grid_entity = grid_single.entity();
 
     commands.entity(grid_entity).with_children(|commands| {
+        commands.spawn(Text::new("Enter name"));
         commands
             .spawn(text_input(&assets, "Create Npc"))
             .insert(input_filter());
@@ -101,13 +102,13 @@ fn create_npc_text_inputs(
 
         let grid_entity = grid_single.entity();
 
-        let prompt = format!("Rename {}", name.0);
         commands.entity(grid_entity).with_children(|commands| {
-            let entity = commands
-                .spawn(text_input(&assets, prompt.as_str()))
+            let text_input_entity = commands
+                .spawn(text_input(&assets, "Rename Npc"))
                 .insert(input_filter())
                 .id();
-            map.0.insert(npc_entity, entity);
+            let text_entity = commands.spawn(Text::new(name.0.as_str())).id();
+            map.0.insert(npc_entity, (text_input_entity, text_entity));
         });
     }
 }
@@ -128,7 +129,7 @@ fn text_input(assets: &Res<AssetServer>, prompt: &str) -> impl Bundle {
         TextInputPrompt::new(prompt),
         TextColor(tailwind::NEUTRAL_100.into()),
         Node {
-            width: Val::Px(300.0),
+            width: Val::Px(200.0),
             height: Val::Px(30.0),
             ..default()
         },
