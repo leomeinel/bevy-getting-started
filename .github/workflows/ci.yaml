@@ -35,7 +35,7 @@ jobs:
       - name: Install Dependencies
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev libwayland-dev
       - name: Run cargo test
-        run: cargo test
+        run: cargo test -j default
 
   # Run cargo clippy -- -D warnings
   clippy_check:
