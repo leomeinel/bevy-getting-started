@@ -24,19 +24,15 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, (on_submit, focus, on_error, on_success));
 }
 
-// Outline colors
 pub(crate) const OUTLINE_COLOR_ACTIVE: Srgba = tailwind::CYAN_500;
 pub(crate) const OUTLINE_COLOR_ERROR: Srgba = tailwind::RED_500;
 pub(crate) const OUTLINE_COLOR_INACTIVE: Srgba = tailwind::CYAN_100;
 
-/// Message that gets written on successful input submission
+/// Message for unsuccessful input submission
 #[derive(Message)]
-pub(crate) struct InputError {
-    /// Entity of unsuccessful input
-    pub(crate) entity: Entity,
-}
+pub(crate) struct InputError(pub(crate) Entity);
 
-/// Message that gets written on successful input submission
+/// Message for successful input submission
 #[derive(Message)]
 pub(crate) struct InputSuccess {
     /// Entity of successful input
@@ -47,7 +43,7 @@ pub(crate) struct InputSuccess {
 
 /// Read messages of type [`SubmitText`]
 ///
-/// This also writes a [`Message`] [`InputSuccess`] on successful input submission
+/// This also writes a [`Message`] [`InputSuccess`] on successful input submission or a [`InputError`] on error.
 fn on_submit(
     mut msgs: MessageReader<SubmitText>,
     mut error_msg: MessageWriter<InputError>,
@@ -59,7 +55,7 @@ fn on_submit(
 
         if text.is_empty() {
             // Write InputError
-            error_msg.write(InputError { entity });
+            error_msg.write(InputError(entity));
             continue;
         }
 
@@ -93,7 +89,7 @@ fn on_error(mut msgs: MessageReader<InputError>, mut outline_q: Query<(Entity, &
     for msg in msgs.read() {
         for (outline_e, mut outline) in outline_q.iter_mut() {
             // Continue if the entity of msg does not match entity
-            if msg.entity != outline_e {
+            if msg.0 != outline_e {
                 continue;
             }
 

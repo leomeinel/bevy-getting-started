@@ -144,7 +144,7 @@ fn create_on_input(
 
         // Continue if an Npc with the same name already exists
         if npc_q.iter().any(|npc_name| npc_name.0 == name) {
-            error_msg.write(InputError { entity });
+            error_msg.write(InputError(entity));
             continue;
         }
 
@@ -152,7 +152,7 @@ fn create_on_input(
     }
 }
 
-/// Renames objects of type [`Npc`] from [`InputSuccess`]
+/// Rename objects of type [`Npc`] from [`InputSuccess`]
 fn rename_on_input(
     mut msgs: MessageReader<InputSuccess>,
     mut error_msg: MessageWriter<InputError>,
@@ -172,9 +172,9 @@ fn rename_on_input(
         let name = msg.text.clone();
 
         for (npc_e, mut npc_name) in &mut npc_q {
-            // Break if an Npc with the same name already exists
+            // Break if an Npc with the same name already exists and write InputError
             if npc_name.0 == name {
-                error_msg.write(InputError { entity });
+                error_msg.write(InputError(entity));
                 break;
             }
 
@@ -183,6 +183,7 @@ fn rename_on_input(
                 continue;
             }
 
+            // Set name associated to npc and write Rename message
             if let Some(name_output_e) = output_map.get(&npc_e) {
                 npc_name.0 = name.clone();
                 success_msg.write(Rename {
@@ -195,6 +196,7 @@ fn rename_on_input(
     }
 }
 
+/// Modify text of name output on rename
 fn on_rename(
     mut msgs: MessageReader<Rename>,
     npc_q: Query<Entity, With<Npc>>,
@@ -202,9 +204,12 @@ fn on_rename(
 ) {
     for msg in msgs.read() {
         for npc_e in &npc_q {
+            // Continue if not targeting the msg npc entity
             if npc_e != msg.npc_e {
                 continue;
             }
+
+            // Modify text of name output entity via text query
             if let Ok(mut text) = text_q.get_mut(msg.name_output_e) {
                 text.0 = msg.text.clone();
             }

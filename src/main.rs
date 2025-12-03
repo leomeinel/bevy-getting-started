@@ -24,8 +24,6 @@ fn main() -> AppExit {
 
 /// AppPlugin that adds everything this app needs to run
 struct AppPlugin;
-
-/// Implementation of [`AppPlugin`]
 impl Plugin for AppPlugin {
     fn build(&self, app: &mut App) {
         // Add Bevy plugins.
@@ -50,7 +48,7 @@ impl Plugin for AppPlugin {
             TextInputPlugin,
         ));
 
-        // Add Bevy plugins.
+        // Add custom plugins.
         app.add_plugins((ui::plugin, npc::plugin));
 
         // Spawn the main camera.

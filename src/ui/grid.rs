@@ -21,13 +21,13 @@ pub(super) fn plugin(app: &mut App) {
 ///
 /// Should only ever exist once.
 #[derive(Component)]
-pub struct GridMarker0;
+pub(crate) struct GridMarker0;
 
 /// Marker component for the second grid.
 ///
 /// Should only ever exist once.
 #[derive(Component)]
-pub struct GridMarker1;
+pub(crate) struct GridMarker1;
 
 /// Spawn a parent [`Bundle`], a bottom [`grid`] and a top [`grid`]
 pub(crate) fn setup(mut commands: Commands) {
