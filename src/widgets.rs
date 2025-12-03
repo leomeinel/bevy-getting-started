@@ -1,5 +1,5 @@
 /*
- * File: ui.rs
+ * File: widgets.rs
  * Author: Leopold Johannes Meinel (leo@meinel.dev)
  * -----
  * Copyright (c) 2025 Leopold Johannes Meinel & contributors
@@ -7,7 +7,7 @@
  * URL: https://www.apache.org/licenses/LICENSE-2.0
  */
 
-//! Ui handler
+//! Widgets
 
 pub(crate) mod grid;
 pub(crate) mod text_input;

@@ -7,7 +7,7 @@
  * URL: https://www.apache.org/licenses/LICENSE-2.0
  */
 
-//! Text input
+//! Text input widget
 //!
 //! Heavily inspired by: https://github.com/ickshonpe/bevy_ui_text_input/blob/master/examples/multiple_inputs.rs
 

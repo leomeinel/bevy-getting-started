@@ -7,9 +7,7 @@
  * URL: https://www.apache.org/licenses/LICENSE-2.0
  */
 
-//! Npc handler
-//!
-//! Heavily inspired by: https://bevy.org/learn/quick-start/getting-started
+//! Characters
 
 pub(crate) mod npc;
 

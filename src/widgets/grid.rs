@@ -7,7 +7,7 @@
  * URL: https://www.apache.org/licenses/LICENSE-2.0
  */
 
-//! Grid
+//! Grid widget
 
 use bevy::prelude::*;
 
