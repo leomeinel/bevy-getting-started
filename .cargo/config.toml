@@ -148,3 +148,6 @@ rustflags = [
 # Custom
 [target.wasm32-unknown-unknown]
 runner = "wasm-server-runner"
+
+[build]
+jobs = 2 # number of parallel jobs, defaults to # of CPUs
