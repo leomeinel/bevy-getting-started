@@ -14,7 +14,7 @@
 use bevy::{color::palettes::tailwind, platform::collections::HashMap, prelude::*};
 use bevy_ui_text_input::{TextInputFilter, TextInputMode, TextInputNode, TextInputPrompt};
 
-use crate::ui::{
+use crate::widgets::{
     grid::{self, GridMarker0, GridMarker1},
     text_input::{self, InputError, InputSuccess},
 };

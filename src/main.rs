@@ -11,11 +11,11 @@
 //!
 //! Heavily inspired by: https://github.com/TheBevyFlock/bevy_new_2d
 
+mod characters;
+mod widgets;
+
 use bevy::{asset::AssetMetaCheck, prelude::*};
 use bevy_ui_text_input::TextInputPlugin;
-
-mod npc;
-mod ui;
 
 /// Main function
 fn main() -> AppExit {
@@ -48,8 +48,8 @@ impl Plugin for AppPlugin {
             TextInputPlugin,
         ));
 
-        // Add custom plugins.
-        app.add_plugins((ui::plugin, npc::plugin));
+        // Add other plugins.
+        app.add_plugins((widgets::plugin, characters::plugin));
 
         // Spawn the main camera.
         app.add_systems(Startup, spawn_camera);

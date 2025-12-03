@@ -9,10 +9,10 @@
 
 //! Ui handler
 
-use bevy::prelude::*;
-
 pub(crate) mod grid;
 pub(crate) mod text_input;
+
+use bevy::prelude::*;
 
 /// Plugin
 pub(super) fn plugin(app: &mut App) {
