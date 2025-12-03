@@ -17,28 +17,28 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(Startup, setup);
 }
 
-/// Marker component for the first grid node.
+/// Marker component for the first grid.
 ///
 /// Should only ever exist once.
 #[derive(Component)]
-pub struct GridNodeMarker0;
+pub struct GridMarker0;
 
-/// Marker component for the second grid node.
+/// Marker component for the second grid.
 ///
 /// Should only ever exist once.
 #[derive(Component)]
-pub struct GridNodeMarker1;
+pub struct GridMarker1;
 
 /// Spawn a parent [`Bundle`], a bottom [`grid`] and a top [`grid`]
 pub(crate) fn setup(mut commands: Commands) {
     // Spawn grid_container bundle containing a child bundle with a grid.
     commands.spawn(grid_container()).with_children(|commands| {
-        commands.spawn((grid(), GridNodeMarker0));
-        commands.spawn((grid(), GridNodeMarker1));
+        commands.spawn((grid(), GridMarker0));
+        commands.spawn((grid(), GridMarker1));
     });
 }
 
-/// [`Bundle`] containing parent [`Node`]
+/// [`Bundle`] containing grid container
 fn grid_container() -> impl Bundle {
     Node {
         display: Display::Flex,
@@ -51,7 +51,7 @@ fn grid_container() -> impl Bundle {
     }
 }
 
-/// [`Bundle`] containing grid [`Node`]
+/// [`Bundle`] containing grid
 fn grid() -> impl Bundle {
     Node {
         display: Display::Grid,

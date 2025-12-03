@@ -15,7 +15,7 @@ use bevy::{color::palettes::tailwind, platform::collections::HashMap, prelude::*
 use bevy_ui_text_input::{TextInputFilter, TextInputMode, TextInputNode, TextInputPrompt};
 
 use crate::ui::{
-    grid::{self, GridNodeMarker0, GridNodeMarker1},
+    grid::{self, GridMarker0, GridMarker1},
     text_input::{self, TextInputError, TextInputSuccess},
 };
 
@@ -48,11 +48,11 @@ struct TextInputMap(HashMap<Entity, Entity>);
 
 /// Spawn text input for creating a new [`Npc`]
 fn setup(
-    grid_node_single: Single<Entity, With<GridNodeMarker0>>,
+    grid_single: Single<Entity, With<GridMarker0>>,
     mut commands: Commands,
     assets: Res<AssetServer>,
 ) {
-    let grid_entity = grid_node_single.entity();
+    let grid_entity = grid_single.entity();
 
     commands.entity(grid_entity).with_children(|commands| {
         commands
@@ -87,7 +87,7 @@ fn create_npc_on_input(
 
 /// Create the text inputs for renaming every [`Npc`]
 fn create_npc_text_inputs(
-    grid_node_single: Single<Entity, With<GridNodeMarker1>>,
+    grid_single: Single<Entity, With<GridMarker1>>,
     npc_query: Query<(Entity, &Name), With<Npc>>,
     mut commands: Commands,
     mut map: ResMut<TextInputMap>,
@@ -99,7 +99,7 @@ fn create_npc_text_inputs(
             continue;
         }
 
-        let grid_entity = grid_node_single.entity();
+        let grid_entity = grid_single.entity();
 
         let prompt = format!("Rename {}", name.0);
         commands.entity(grid_entity).with_children(|commands| {
@@ -112,7 +112,7 @@ fn create_npc_text_inputs(
     }
 }
 
-/// [`Bundle`] containing input [`Node`]
+/// [`Bundle`] containing text input
 fn text_input(assets: &Res<AssetServer>, prompt: &str) -> impl Bundle {
     (
         TextInputNode {
