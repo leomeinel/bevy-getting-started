@@ -22,13 +22,21 @@ use crate::ui::{
 /// Plugin
 pub(super) fn plugin(app: &mut App) {
     // Insert resources
-    app.insert_resource(TextInputMap::default());
+    app.insert_resource(NameInputMap::default());
+    app.insert_resource(NameMap::default());
 
     // Add startup systems
     app.add_systems(Startup, setup.after(grid::setup));
 
     // Add update systems
-    app.add_systems(Update, (create_npc_on_input, create_npc_text_inputs));
+    app.add_systems(
+        Update,
+        (
+            create_npc_on_input,
+            create_npc_rename_inputs,
+            rename_npc_on_input,
+        ),
+    );
 }
 
 /// Npc
@@ -39,14 +47,25 @@ struct Npc;
 #[derive(Component)]
 struct Name(String);
 
-/// Text input map
-///
-/// This contains any text input that is mapped to an [`Npc`].
-/// These text inputs are meant as a way to change the [`Name`] of an [`Npc`].
-#[derive(Resource, Default)]
-struct TextInputMap(HashMap<Entity, (Entity, Entity)>);
+/// Marker component for any name input that is used for renaming
+#[derive(Component)]
+struct RenameInputMarker;
 
-/// Spawn text input for creating a new [`Npc`]
+/// Name input map
+///
+/// It is structured like this:
+/// k: [`Npc`] [`Entity`] -> v: 'name input [`Entity`]'
+#[derive(Resource, Deref, Default)]
+struct NameInputMap(HashMap<Entity, Entity>);
+
+/// Name map
+///
+/// It is structured like this:
+/// k: [`Npc`] [`Entity`] -> v: 'name [`Entity`]'
+#[derive(Resource, Deref, Default)]
+struct NameMap(HashMap<Entity, Entity>);
+
+/// Spawn name input for creating a new [`Npc`]
 fn setup(
     grid_single: Single<Entity, With<GridMarker0>>,
     mut commands: Commands,
@@ -57,8 +76,8 @@ fn setup(
     commands.entity(grid_entity).with_children(|commands| {
         commands.spawn(Text::new("Enter name"));
         commands
-            .spawn(text_input(&assets, "Create Npc"))
-            .insert(input_filter());
+            .spawn(name_input(&assets, "Create Npc"))
+            .insert(name_input_filter());
     });
 }
 
@@ -69,52 +88,102 @@ fn create_npc_on_input(
     mut messages: MessageReader<TextInputSuccess>,
     mut error_writer: MessageWriter<TextInputError>,
     npc_query: Query<&Name, With<Npc>>,
+    rename_query: Query<Entity, With<RenameInputMarker>>,
     mut commands: Commands,
 ) {
     for message in messages.read() {
-        let text = message.text.clone();
-        // Exit early if a character with the same name already exists
-        for name in &npc_query {
-            if name.0 == text {
-                error_writer.write(TextInputError {
-                    entity: message.entity,
-                });
-                return;
-            }
+        // Continue if targeting a rename entity
+        if rename_query.contains(message.entity) {
+            continue;
         }
-        commands.spawn((Npc, Name(text.clone())));
+
+        let name = message.text.clone();
+
+        // Continue if an Npc with the same name already exists
+        if npc_query.iter().any(|npc_name| npc_name.0 == name) {
+            error_writer.write(TextInputError {
+                entity: message.entity,
+            });
+            continue;
+        }
+
+        commands.spawn((Npc, Name(name)));
     }
 }
 
-/// Create the text inputs for renaming every [`Npc`]
-fn create_npc_text_inputs(
+/// Renames objects of type [`Npc`] from [`TextInputSuccess`]
+fn rename_npc_on_input(
+    mut messages: MessageReader<TextInputSuccess>,
+    mut error_writer: MessageWriter<TextInputError>,
+    mut npc_query: Query<(Entity, &mut Name), With<Npc>>,
+    mut text_query: Query<&mut Text>,
+    rename_query: Query<Entity, With<RenameInputMarker>>,
+    name_input_map: Res<NameInputMap>,
+    name_map: Res<NameMap>,
+) {
+    for message in messages.read() {
+        // Continue if not targeting a rename entity
+        if !rename_query.contains(message.entity) {
+            continue;
+        }
+
+        let name = message.text.clone();
+
+        // Continue if an Npc with the same name already exists
+        if npc_query.iter().any(|(_, npc_name)| npc_name.0 == name) {
+            error_writer.write(TextInputError {
+                entity: message.entity,
+            });
+            continue;
+        }
+
+        for (npc_entity, mut npc_name) in &mut npc_query {
+            let name_input_entity = name_input_map[&npc_entity];
+            if name_input_entity != message.entity {
+                continue;
+            }
+            npc_name.0 = name.clone();
+
+            let name_entity = name_map[&npc_entity];
+            if let Ok(mut text) = text_query.get_mut(name_entity) {
+                text.0 = name.clone();
+            }
+        }
+    }
+}
+
+/// Create the name inputs for renaming every [`Npc`]
+fn create_npc_rename_inputs(
     grid_single: Single<Entity, With<GridMarker1>>,
     npc_query: Query<(Entity, &Name), With<Npc>>,
     mut commands: Commands,
-    mut map: ResMut<TextInputMap>,
+    mut name_input_map: ResMut<NameInputMap>,
+    mut name_map: ResMut<NameMap>,
     assets: Res<AssetServer>,
 ) {
     for (npc_entity, name) in &npc_query {
-        // Continue if TextInputs already contains Name
-        if map.0.contains_key(&npc_entity) {
+        // Continue if NameInputMap already contains key of npc_entity
+        if name_input_map.0.contains_key(&npc_entity) {
             continue;
         }
 
         let grid_entity = grid_single.entity();
 
         commands.entity(grid_entity).with_children(|commands| {
-            let text_input_entity = commands
-                .spawn(text_input(&assets, "Rename Npc"))
-                .insert(input_filter())
+            let name_input_entity = commands
+                .spawn((name_input(&assets, "Rename Npc"), RenameInputMarker))
+                .insert(name_input_filter())
                 .id();
-            let text_entity = commands.spawn(Text::new(name.0.as_str())).id();
-            map.0.insert(npc_entity, (text_input_entity, text_entity));
+            let name_entity = commands.spawn(Text::new(name.0.as_str())).id();
+
+            name_input_map.0.insert(npc_entity, name_input_entity);
+            name_map.0.insert(npc_entity, name_entity);
         });
     }
 }
 
-/// [`Bundle`] containing text input
-fn text_input(assets: &Res<AssetServer>, prompt: &str) -> impl Bundle {
+/// [`Bundle`] containing name input
+fn name_input(assets: &Res<AssetServer>, prompt: &str) -> impl Bundle {
     (
         TextInputNode {
             mode: TextInputMode::SingleLine,
@@ -142,10 +211,10 @@ fn text_input(assets: &Res<AssetServer>, prompt: &str) -> impl Bundle {
     )
 }
 
-/// Input filter
+/// Name input filter
 ///
 /// This filters for anything that is alphanumeric or whitespace.
-fn input_filter() -> TextInputFilter {
+fn name_input_filter() -> TextInputFilter {
     TextInputFilter::custom(is_alphanumeric_or_whitespace)
 }
 
@@ -154,6 +223,3 @@ fn is_alphanumeric_or_whitespace(text: &str) -> bool {
     text.chars()
         .all(|c| c.is_ascii_alphanumeric() || c.is_ascii_whitespace())
 }
-
-// TODO: Accumulate added npcs as text boxes and add ability to rename each of them.
-//       This should use a scrollable list.
