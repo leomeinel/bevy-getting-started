@@ -41,7 +41,8 @@ struct Name(String);
 
 /// Text input map
 ///
-/// This contains any text input that is mapped to an [`Npc`]
+/// This contains any text input that is mapped to an [`Npc`].
+/// These text inputs are meant as a way to change the [`Name`] of an [`Npc`].
 #[derive(Resource, Default)]
 struct TextInputMap(HashMap<Entity, Entity>);
 
