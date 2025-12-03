@@ -130,7 +130,6 @@ fn text_input(assets: &Res<AssetServer>, prompt: &str) -> impl Bundle {
         Node {
             width: Val::Px(300.0),
             height: Val::Px(30.0),
-            margin: UiRect::all(Val::Px(10.)),
             ..default()
         },
         BackgroundColor(tailwind::NEUTRAL_800.into()),

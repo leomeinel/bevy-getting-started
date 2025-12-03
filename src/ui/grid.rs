@@ -55,7 +55,9 @@ fn grid_container() -> impl Bundle {
 fn grid() -> impl Bundle {
     Node {
         display: Display::Grid,
-        width: Val::Px(300.0),
+        grid_template_columns: RepeatedGridTrack::flex(2, 1.),
+        column_gap: Val::Px(20.),
+        row_gap: Val::Px(20.),
         margin: UiRect::all(Val::Px(20.)),
         ..default()
     }
