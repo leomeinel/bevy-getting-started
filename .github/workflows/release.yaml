@@ -42,18 +42,17 @@ jobs:
         run: |
           cargo build --target wasm32-unknown-unknown --profile wasm-release
 
-      - name: install binaryen
+      - name: install binaryen version 125
         run: |
-          sudo apt-get update; sudo apt-get install binaryen
+          curl -LJO https://github.com/WebAssembly/binaryen/releases/download/version_125/binaryen-version_125-x86_64-linux.tar.gz
+          tar -xzf ./binaryen-version_125-x86_64-linux.tar.gz
 
       - name: Optimize binary
         run: |
-          OUTPUT=target/wasm32-unknown-unknown/wasm-release/${{ env.binary }}.wasm
+          OUTPUT=./target/wasm32-unknown-unknown/wasm-release/${{ env.binary }}.wasm
           tmpfile="$(mktemp /tmp/${{ env.binary }}-XXXXXX.wasm)"
           mv "${OUTPUT}" "${tmpfile}"
-          # FIXME: Use '--enable-bulk-memory-opt' instead after the flag has been added to ubuntu-latest
-          #        See: https://manpages.ubuntu.com/manpages/resolute/en/man1/wasm-opt.1.html
-          wasm-opt -Os -o "${OUTPUT}" "${tmpfile}" --enable-bulk-memory --enable-nontrapping-float-to-int
+          ./binaryen-version_125/bin/wasm-opt -Os -o "${OUTPUT}" "${tmpfile}" --enable-bulk-memory-opt --enable-nontrapping-float-to-int
 
       - name: install wasm-bindgen-cli
         run: |
@@ -61,7 +60,7 @@ jobs:
 
       - name: Prepare package
         run: |
-          wasm-bindgen --no-typescript --out-name bevy_game --out-dir wasm --target web target/wasm32-unknown-unknown/wasm-release/${{ env.binary }}.wasm
+          wasm-bindgen --no-typescript --out-name bevy_game --out-dir wasm --target web ./target/wasm32-unknown-unknown/wasm-release/${{ env.binary }}.wasm
           cp -r assets wasm/ || true # Try to copy, but ignore if it can't copy if source directory does not exist
 
       - name: Upload binaries to pages artifacts
