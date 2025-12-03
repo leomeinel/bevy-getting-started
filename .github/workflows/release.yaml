@@ -48,7 +48,7 @@ jobs:
 
       - name: Optimize binary
         run: |
-          OUTPUT=target/wasm32-unknown-unknown/release/${{ env.binary }}.wasm
+          OUTPUT=target/wasm32-unknown-unknown/wasm-release/${{ env.binary }}.wasm
           tmpfile="$(mktemp /tmp/${{ env.binary }}-XXXXXX.wasm)"
           mv "${OUTPUT}" "${tmpfile}"
           wasm-opt -Os -o "${OUTPUT}" "${tmpfile}" --enable-bulk-memory-opt --enable-nontrapping-float-to-int
@@ -59,7 +59,7 @@ jobs:
 
       - name: Prepare package
         run: |
-          wasm-bindgen --no-typescript --out-name bevy_game --out-dir wasm --target web target/wasm32-unknown-unknown/release/${{ env.binary }}.wasm
+          wasm-bindgen --no-typescript --out-name bevy_game --out-dir wasm --target web target/wasm32-unknown-unknown/wasm-release/${{ env.binary }}.wasm
           cp -r assets wasm/ || true # Try to copy, but ignore if it can't copy if source directory does not exist
 
       - name: Upload binaries to pages artifacts
