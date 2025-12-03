@@ -16,13 +16,13 @@ use bevy_ui_text_input::{TextInputFilter, TextInputMode, TextInputNode, TextInpu
 
 use crate::widgets::{
     grid::{self, GridMarker0, GridMarker1},
-    text_input::{self, InputError, InputSuccess},
+    text_input::{self, InputError, InputSubmitted, InputUsed},
 };
 
 /// Plugin
 pub(super) fn plugin(app: &mut App) {
     // Add messages
-    app.add_message::<Rename>();
+    app.add_message::<Renamed>();
 
     // Insert resources
     app.insert_resource(InputMap::default());
@@ -34,13 +34,13 @@ pub(super) fn plugin(app: &mut App) {
     // Add update systems
     app.add_systems(
         Update,
-        (spawn_rename, create_on_input, rename_on_input, on_rename),
+        (spawn_rename, create_on_input, rename_on_input, on_renamed),
     );
 }
 
 /// Message that gets written on successful renaming
 #[derive(Message)]
-struct Rename {
+struct Renamed {
     /// [`Entity`] of the [`Npc`]
     npc_e: Entity,
     /// [`Entity`] of name output
@@ -57,10 +57,6 @@ struct Npc;
 #[derive(Component)]
 struct Name(String);
 
-/// Marker component for any name input that is used for renaming
-#[derive(Component)]
-struct RenameMarker;
-
 /// Name input map
 ///
 /// It is structured like this:
@@ -74,6 +70,10 @@ struct InputMap(HashMap<Entity, Entity>);
 /// k: [`Npc`] [`Entity`] -> v: 'name [`Entity`]'
 #[derive(Resource, Deref, Default)]
 struct OutputMap(HashMap<Entity, Entity>);
+
+/// Marker component for any name input that is used for renaming
+#[derive(Component)]
+struct RenameMarker;
 
 /// Spawn name input for creating a new [`Npc`]
 fn setup(
@@ -101,50 +101,56 @@ fn spawn_rename(
     mut output_map: ResMut<OutputMap>,
     assets: Res<AssetServer>,
 ) {
-    for (npc_e, name) in &npc_q {
-        // Continue if InputMap already contains key of npc_e
-        if input_map.0.contains_key(&npc_e) {
-            continue;
-        }
+    // Get npc entity and npc name from npc query
+    // This gets any npc that does not have an associated npc in the input map
+    let Some((npc_e, name)) = npc_q.iter().find(|(e, _name)| !input_map.0.contains_key(e)) else {
+        return;
+    };
 
-        let grid_e = grid_q.entity();
+    let grid_e = grid_q.entity();
 
-        // Spawn as child of grid_e
-        commands.entity(grid_e).with_children(|commands| {
-            let name_input_e = commands
-                .spawn((input(&assets, "Rename Npc"), RenameMarker))
-                .insert(input_filter())
-                .id();
-            let name_output_e = commands.spawn(Text::new(name.0.as_str())).id();
+    // Spawn as child of grid_e
+    commands.entity(grid_e).with_children(|commands| {
+        // Spawn name input and name output
+        let name_input_e = commands
+            .spawn((input(&assets, "Rename Npc"), RenameMarker))
+            .insert(input_filter())
+            .id();
+        let name_output_e = commands.spawn(Text::new(name.0.as_str())).id();
 
-            input_map.0.insert(npc_e, name_input_e);
-            output_map.0.insert(npc_e, name_output_e);
-        });
-    }
+        // Insert into maps
+        input_map.0.insert(npc_e, name_input_e);
+        output_map.0.insert(npc_e, name_output_e);
+    });
 }
 
-/// Add objects of type [`Npc`] from [`InputSuccess`]
+/// Add [`Npc`]s from [`InputSubmitted`]
 ///
-/// This adds a bundle of [`Npc`] and [`Name`] from [`InputSuccess`]
+/// This adds a bundle of [`Npc`] and [`Name`] from [`InputSubmitted`]
 fn create_on_input(
-    mut msgs: MessageReader<InputSuccess>,
+    mut msgs: MessageReader<InputSubmitted>,
     mut error_msg: MessageWriter<InputError>,
+    mut used_msg: MessageWriter<InputUsed>,
     npc_q: Query<&Name, With<Npc>>,
-    rename_q: Query<Entity, With<RenameMarker>>,
+    renamed_q: Query<Entity, With<RenameMarker>>,
     mut commands: Commands,
 ) {
     for msg in msgs.read() {
-        // Continue if targeting a rename entity
+        // Continue if targeting a renamed entity
         let entity = msg.entity;
-        if rename_q.contains(entity) {
+        if renamed_q.contains(entity) {
             continue;
         }
 
         let name = msg.text.clone();
 
         // Continue if an Npc with the same name already exists
-        if npc_q.iter().any(|npc_name| npc_name.0 == name) {
-            error_msg.write(InputError(entity));
+        if !text_input::validate_input(
+            &mut error_msg,
+            &mut used_msg,
+            entity,
+            npc_q.iter().any(|npc_name| npc_name.0 == name),
+        ) {
             continue;
         }
 
@@ -152,67 +158,76 @@ fn create_on_input(
     }
 }
 
-/// Rename objects of type [`Npc`] from [`InputSuccess`]
+/// Rename [`Npc`]s from [`InputSubmitted`]
+#[allow(clippy::too_many_arguments)]
 fn rename_on_input(
-    mut msgs: MessageReader<InputSuccess>,
+    mut msgs: MessageReader<InputSubmitted>,
     mut error_msg: MessageWriter<InputError>,
-    mut success_msg: MessageWriter<Rename>,
+    mut renamed_msg: MessageWriter<Renamed>,
+    mut used_msg: MessageWriter<InputUsed>,
     mut npc_q: Query<(Entity, &mut Name), With<Npc>>,
-    rename_q: Query<Entity, With<RenameMarker>>,
+    renamed_q: Query<Entity, With<RenameMarker>>,
     input_map: Res<InputMap>,
     output_map: Res<OutputMap>,
 ) {
     for msg in msgs.read() {
-        // Continue if not targeting a rename entity
+        // Continue if not targeting a renamed entity
         let entity = msg.entity;
-        if !rename_q.contains(entity) {
+        if !renamed_q.contains(entity) {
             continue;
         }
 
         let name = msg.text.clone();
 
-        for (npc_e, mut npc_name) in &mut npc_q {
-            // Break if an Npc with the same name already exists and write InputError
-            if npc_name.0 == name {
-                error_msg.write(InputError(entity));
-                break;
-            }
-
-            // Continue if we can't get the key npc_e from input_map or the contained entity is not our entity
-            if input_map.get(&npc_e).is_none_or(|e| *e != entity) {
-                continue;
-            }
-
-            // Set name associated to npc and write Rename message
-            if let Some(name_output_e) = output_map.get(&npc_e) {
-                npc_name.0 = name.clone();
-                success_msg.write(Rename {
-                    npc_e,
-                    name_output_e: *name_output_e,
-                    text: name.clone(),
-                });
-            }
+        // Continue if an Npc with the same name already exists
+        if !text_input::validate_input(
+            &mut error_msg,
+            &mut used_msg,
+            entity,
+            npc_q.iter().any(|(_entity, npc_name)| npc_name.0 == name),
+        ) {
+            continue;
         }
+
+        // Get npc entity and npc name from npc query
+        // Find npc matching entity and check that it exists in input map
+        let Some((npc_e, mut npc_name)) = npc_q
+            .iter_mut()
+            .find(|(e, _name)| input_map.get(e).is_some_and(|e| *e == entity))
+        else {
+            continue;
+        };
+
+        // Get name output entity from output map
+        let Some(name_output_e) = output_map.get(&npc_e) else {
+            continue;
+        };
+
+        // Mutate npc name and write Renamed message
+        npc_name.0 = name.clone();
+        renamed_msg.write(Renamed {
+            npc_e,
+            name_output_e: *name_output_e,
+            text: name.clone(),
+        });
     }
 }
 
-/// Modify text of name output on rename
-fn on_rename(
-    mut msgs: MessageReader<Rename>,
+/// Modify text of name output on renamed
+fn on_renamed(
+    mut msgs: MessageReader<Renamed>,
     npc_q: Query<Entity, With<Npc>>,
     mut text_q: Query<&mut Text>,
 ) {
     for msg in msgs.read() {
-        for npc_e in &npc_q {
-            // Continue if not targeting the msg npc entity
-            if npc_e != msg.npc_e {
-                continue;
-            }
+        // Continue if not targeting the msg npc entity
+        if !npc_q.contains(msg.npc_e) {
+            continue;
+        }
 
-            // Modify text of name output entity via text query
-            if let Ok(mut text) = text_q.get_mut(msg.name_output_e) {
-                text.0 = msg.text.clone();
-            }
+        // Modify text of name output entity via text query
+        if let Ok(mut text) = text_q.get_mut(msg.name_output_e) {
+            text.0 = msg.text.clone();
         }
     }
 }
