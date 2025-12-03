@@ -48,11 +48,11 @@ struct TextInputMap(HashMap<Entity, Entity>);
 
 /// Spawn text input for creating a new [`Npc`]
 fn setup(
-    grid_node_query: Single<Entity, With<GridNodeMarker0>>,
+    grid_node_single: Single<Entity, With<GridNodeMarker0>>,
     mut commands: Commands,
     assets: Res<AssetServer>,
 ) {
-    let grid_entity = grid_node_query.entity();
+    let grid_entity = grid_node_single.entity();
 
     commands.entity(grid_entity).with_children(|commands| {
         commands
@@ -87,7 +87,7 @@ fn create_npc_on_input(
 
 /// Create the text inputs for renaming every [`Npc`]
 fn create_npc_text_inputs(
-    grid_node_query: Single<Entity, With<GridNodeMarker1>>,
+    grid_node_single: Single<Entity, With<GridNodeMarker1>>,
     npc_query: Query<(Entity, &Name), With<Npc>>,
     mut commands: Commands,
     mut map: ResMut<TextInputMap>,
@@ -99,7 +99,7 @@ fn create_npc_text_inputs(
             continue;
         }
 
-        let grid_entity = grid_node_query.entity();
+        let grid_entity = grid_node_single.entity();
 
         let prompt = format!("Rename {}", name.0);
         commands.entity(grid_entity).with_children(|commands| {
