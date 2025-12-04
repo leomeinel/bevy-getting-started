@@ -1,6 +1,8 @@
 # Bevy - Getting Started
 
-This is a learning project that follows the [Bevy - Getting Started](https://bevy.org/learn/quick-start/getting-started/) guide.
+This is a learning project that follows the [Bevy - Getting Started](https://bevy.org/learn/quick-start/getting-started) guide.
+
+You can play the game [here](https://leomeinel.github.io/bevy-getting-started) or download a [release](https://github.com/leomeinel/bevy-getting-started/releases).
 
 ## Mixed license
 
