@@ -319,9 +319,10 @@ jobs:
 
       - name: Upload web bundle to workflow artifacts for GitHub Pages (Web)
         if: ${{ env.is_platform_enabled == 'true' && matrix.platform == 'web' && env.deploy_to_github_pages }}
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
-          path: ${{ env.app }}/${{ env.cargo_build_binary_name }}
+          path: ${{ env.app }}
+          retention-days: 1
 
       - name: Upload package to GitHub release
         if: ${{ env.is_platform_enabled == 'true' && env.upload_to_github }}
@@ -331,7 +332,7 @@ jobs:
           file: tmp/app/${{ env.package }}
           asset_name: ${{ env.package }}
           release_name: ${{ env.version }}
-          tag: ${{ env.version }}
+          tag: ${{ github.ref }}
           overwrite: true
 
   # Deploy to itch.io.
