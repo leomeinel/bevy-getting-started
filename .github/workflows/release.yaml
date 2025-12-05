@@ -17,13 +17,13 @@ concurrency:
 # Configure the release workflow by editing the following values.
 env:
   # Which platforms to build for or deploy to
-  build_for_windows: true
-  build_for_macos: true
   build_for_linux: true
+  build_for_macos: true
   build_for_web: true
-  upload_to_github: true
-  deploy_to_itch: false
+  build_for_windows: true
   deploy_to_github_pages: true
+  deploy_to_itch: false
+  upload_to_github: true
 
   # Deny rust warnings
   deny_warnings: false
@@ -78,12 +78,14 @@ jobs:
   # Forward some environment variables as outputs of this job.
   # This is needed because the `env` context can't be used in the `if:` condition of a job:
   # <https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability>
-  forward-env-itch:
+  forward-env:
     runs-on: ubuntu-latest
     steps:
       - name: Do nothing
         run: "true"
     outputs:
+      build_for_web: ${{ env.build_for_web }}
+      deploy_to_github_pages: ${{ env.deploy_to_github_pages }}
       deploy_to_itch: ${{ env.deploy_to_itch }}
       itch_page: ${{ env.itch_page }}
 
@@ -339,10 +341,10 @@ jobs:
   deploy-to-itch:
     runs-on: ubuntu-latest
     needs:
-      - forward-env-itch
+      - forward-env
       - get-version
       - build
-    if: ${{ needs.forward-env-itch.outputs.deploy_to_itch && needs.forward-env-itch.outputs.itch_page != '' }}
+    if: ${{ needs.forward-env.outputs.deploy_to_itch && needs.forward-env.outputs.itch_page != '' }}
 
     steps:
       - name: Download packages
@@ -373,7 +375,9 @@ jobs:
   # Deploy to GitHub Pages.
   deploy-to-github-pages:
     runs-on: ubuntu-latest
-    needs: build
+    needs:
+      - forward-env
+      - build
     permissions:
       # Required to deploy to GitHub Pages.
       pages: write
@@ -383,7 +387,7 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
-    if: ${{ env.deploy_to_github_pages && env.build_for_web }}
+    if: ${{ needs.forward-env.outputs.deploy_to_github_pages && needs.forward-env.outputs.build_for_web }}
 
     steps:
       - name: Deploy to GitHub Pages
