@@ -117,6 +117,7 @@ jobs:
         include:
           - platform: web
             targets: wasm32-unknown-unknown
+            binary_ext: .wasm
             package_ext: .zip
             runner: ubuntu-latest
 
@@ -227,13 +228,13 @@ jobs:
           tar -xzf ./binaryen-version_125-x86_64-linux.tar.gz
 
           # Optimize binary
-          BUILD_OUTPUT=target/${{ matrix.targets }}/web-release/${{ env.cargo_build_binary_name }}
+          OUTPUT=target/${{ matrix.targets }}/web-release/${{ env.cargo_build_binary_name }}${{ matrix.binary_ext }}
           tmpfile="$(mktemp /tmp/${{ env.binary }}-XXXXXX.wasm)"
-          mv "${BUILD_OUTPUT}" "${tmpfile}"
-          ./binaryen-version_125/bin/wasm-opt -Os -o "${BUILD_OUTPUT}" "${tmpfile}" --enable-bulk-memory-opt --enable-nontrapping-float-to-int
+          mv "${OUTPUT}" "${tmpfile}"
+          ./binaryen-version_125/bin/wasm-opt -Os -o "${OUTPUT}" "${tmpfile}" --enable-bulk-memory-opt --enable-nontrapping-float-to-int
 
           cargo binstall --locked --no-confirm --force wasm-bindgen-cli
-          wasm-bindgen --no-typescript --out-name bevy_game --out-dir tmp/binary --target web "${BUILD_OUTPUT}"
+          wasm-bindgen --no-typescript --out-name bevy_game --out-dir tmp/binary --target web "${OUTPUT}"
           mv tmp/binary/* '${{ env.app }}'
 
       - name: Build and add binaries to app (non-Web)
