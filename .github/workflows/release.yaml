@@ -233,8 +233,7 @@ jobs:
           ./binaryen-version_125/bin/wasm-opt -Os -o "${BUILD_OUTPUT}" "${tmpfile}" --enable-bulk-memory-opt --enable-nontrapping-float-to-int
 
           cargo binstall --locked --no-confirm --force wasm-bindgen-cli
-          BINDGEN_OUTPUT=tmp/binary
-          wasm-bindgen --no-typescript --out-name bevy_game --out-dir web --target web "${BUILD_OUTPUT}"
+          wasm-bindgen --no-typescript --out-name bevy_game --out-dir tmp/binary --target web "${BUILD_OUTPUT}"
           mv tmp/binary/* '${{ env.app }}'
 
       - name: Build and add binaries to app (non-Web)
