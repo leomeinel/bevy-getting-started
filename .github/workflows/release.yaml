@@ -78,12 +78,13 @@ jobs:
   # Forward some environment variables as outputs of this job.
   # This is needed because the `env` context can't be used in the `if:` condition of a job:
   # <https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability>
-  forward-env:
+  forward-env-itch:
     runs-on: ubuntu-latest
     steps:
       - name: Do nothing
         run: "true"
     outputs:
+      deploy_to_itch: ${{ env.deploy_to_itch }}
       itch_page: ${{ env.itch_page }}
 
   # Determine the version number for this workflow.
@@ -338,10 +339,10 @@ jobs:
   deploy-to-itch:
     runs-on: ubuntu-latest
     needs:
-      - forward-env
+      - forward-env-itch
       - get-version
       - build
-    if: ${{ env.deploy_to_itch && needs.forward-env.outputs.itch_page != '' }}
+    if: ${{ needs.forward-env-itch.outputs.deploy_to_itch && needs.forward-env-itch.outputs.itch_page != '' }}
 
     steps:
       - name: Download packages
