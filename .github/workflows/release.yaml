@@ -227,7 +227,7 @@ jobs:
           tar -xzf ./binaryen-version_125-x86_64-linux.tar.gz
 
           # Optimize binary
-          OUTPUT=target/${{ matrix.platform }}/web-release/${{ env.cargo_build_binary_name }}
+          OUTPUT=target/${{ matrix.targets }}/web-release/${{ env.cargo_build_binary_name }}
           tmpfile="$(mktemp /tmp/${{ env.binary }}-XXXXXX.wasm)"
           mv "${OUTPUT}" "${tmpfile}"
           ./binaryen-version_125/bin/wasm-opt -Os -o "${OUTPUT}" "${tmpfile}" --enable-bulk-memory-opt --enable-nontrapping-float-to-int
