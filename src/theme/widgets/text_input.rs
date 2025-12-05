@@ -9,7 +9,7 @@
 
 //! Text input widget
 //!
-//! Heavily inspired by: https://github.com/ickshonpe/bevy_ui_text_input/blob/master/examples/multiple_inputs.rs
+//! Heavily inspired by: <https://github.com/ickshonpe/bevy_ui_text_input/blob/master/examples/multiple_inputs.rs>
 
 use bevy::{color::palettes::tailwind, input_focus::InputFocus, prelude::*};
 use bevy_ui_text_input::SubmitText;

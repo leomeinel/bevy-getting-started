@@ -9,7 +9,7 @@
 
 //! Npc
 //!
-//! Heavily inspired by: https://bevy.org/learn/quick-start/getting-started
+//! Heavily inspired by: <https://bevy.org/learn/quick-start/getting-started>
 
 use bevy::{color::palettes::tailwind, platform::collections::HashMap, prelude::*};
 use bevy_ui_text_input::{TextInputFilter, TextInputMode, TextInputNode, TextInputPrompt};
