@@ -343,7 +343,7 @@ dependencies = [
 
 [[package]]
 name = "bevy-getting-started"
-version = "0.2.3"
+version = "0.2.4"
 dependencies = [
  "bevy",
  "bevy_ui_text_input",
