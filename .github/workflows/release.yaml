@@ -321,7 +321,7 @@ jobs:
         if: ${{ env.is_platform_enabled == 'true' && matrix.platform == 'web' && env.deploy_to_github_pages }}
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ${{ env.app }}
+          path: ${{ env.app }}/${{ env.cargo_build_binary_name }}
 
       - name: Upload package to GitHub release
         if: ${{ env.is_platform_enabled == 'true' && env.upload_to_github }}
