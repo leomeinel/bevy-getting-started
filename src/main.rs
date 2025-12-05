@@ -12,7 +12,7 @@
 //! Heavily inspired by: https://github.com/TheBevyFlock/bevy_new_2d
 
 mod characters;
-mod widgets;
+mod theme;
 
 use bevy::{asset::AssetMetaCheck, prelude::*};
 use bevy_ui_text_input::TextInputPlugin;
@@ -49,7 +49,7 @@ impl Plugin for AppPlugin {
         ));
 
         // Add other plugins.
-        app.add_plugins((widgets::plugin, characters::plugin));
+        app.add_plugins((theme::plugin, characters::plugin));
 
         // Spawn the main camera.
         app.add_systems(Startup, spawn_camera);

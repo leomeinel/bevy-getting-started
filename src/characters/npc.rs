@@ -14,7 +14,7 @@
 use bevy::{color::palettes::tailwind, platform::collections::HashMap, prelude::*};
 use bevy_ui_text_input::{TextInputFilter, TextInputMode, TextInputNode, TextInputPrompt};
 
-use crate::widgets::{
+use crate::theme::widgets::{
     grid::{self, GridMarker0, GridMarker1},
     text_input::{self, InputError, InputSubmitted, InputUsed},
 };
@@ -159,7 +159,6 @@ fn create_on_input(
 }
 
 /// Rename [`Npc`]s from [`InputSubmitted`]
-#[allow(clippy::too_many_arguments)]
 fn rename_on_input(
     mut msgs: MessageReader<InputSubmitted>,
     mut error_msg: MessageWriter<InputError>,

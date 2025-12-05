@@ -1,5 +1,5 @@
 /*
- * File: widgets.rs
+ * File: theme.rs
  * Author: Leopold Johannes Meinel (leo@meinel.dev)
  * -----
  * Copyright (c) 2025 Leopold Johannes Meinel & contributors
@@ -7,15 +7,14 @@
  * URL: https://www.apache.org/licenses/LICENSE-2.0
  */
 
-//! Widgets
+//! Theme
 
-pub(crate) mod grid;
-pub(crate) mod text_input;
+pub(crate) mod widgets;
 
 use bevy::prelude::*;
 
 /// Plugin
 pub(super) fn plugin(app: &mut App) {
     // Add plugins
-    app.add_plugins((grid::plugin, text_input::plugin));
+    app.add_plugins(widgets::plugin);
 }
