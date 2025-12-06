@@ -5,11 +5,11 @@
  * Copyright (c) 2025 Leopold Johannes Meinel & contributors
  * SPDX ID: Apache-2.0
  * URL: https://www.apache.org/licenses/LICENSE-2.0
+ * -----
+ * Heavily inspired by: https://bevy.org/learn/quick-start/getting-started
  */
 
 //! Npc
-//!
-//! Heavily inspired by: <https://bevy.org/learn/quick-start/getting-started>
 
 use bevy::{color::palettes::tailwind, platform::collections::HashMap, prelude::*};
 use bevy_ui_text_input::{TextInputFilter, TextInputMode, TextInputNode, TextInputPrompt};

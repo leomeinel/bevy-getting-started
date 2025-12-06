@@ -5,11 +5,11 @@
  * Copyright (c) 2025 Leopold Johannes Meinel & contributors
  * SPDX ID: Apache-2.0
  * URL: https://www.apache.org/licenses/LICENSE-2.0
+ * -----
+ * Heavily inspired by: https://github.com/ickshonpe/bevy_ui_text_input/blob/master/examples/multiple_inputs.rs
  */
 
 //! Text input widget
-//!
-//! Heavily inspired by: <https://github.com/ickshonpe/bevy_ui_text_input/blob/master/examples/multiple_inputs.rs>
 
 use bevy::{color::palettes::tailwind, input_focus::InputFocus, prelude::*};
 use bevy_ui_text_input::SubmitText;
