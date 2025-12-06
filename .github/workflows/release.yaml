@@ -234,8 +234,8 @@ jobs:
           ./binaryen-version_125/bin/wasm-opt -Os -o "${OUTPUT}" "${tmpfile}" --enable-bulk-memory-opt --enable-nontrapping-float-to-int
 
           cargo binstall --locked --no-confirm --force wasm-bindgen-cli
-          wasm-bindgen --no-typescript --out-name bevy_game --out-dir tmp/binary --target web "${OUTPUT}"
-          mv tmp/binary/* '${{ env.app }}'
+          wasm-bindgen --no-typescript --out-name bevy_game --out-dir ./web --target web "${OUTPUT}"
+          mv ./web/* '${{ env.app }}'
 
       - name: Build and add binaries to app (non-Web)
         if: ${{ env.is_platform_enabled == 'true' && matrix.platform != 'web' }}
@@ -321,7 +321,7 @@ jobs:
         if: ${{ env.is_platform_enabled == 'true' && matrix.platform == 'web' && env.deploy_to_github_pages }}
         uses: actions/upload-pages-artifact@v4
         with:
-          path: ${{ env.app }}
+          path: ${{ env.app }}/
           retention-days: 1
 
       - name: Upload package to GitHub release
