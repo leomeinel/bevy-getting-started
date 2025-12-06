@@ -91,14 +91,14 @@ fn on_submit(
 }
 
 /// Update outline color based on focus
-fn focus(mut outline_q: Query<(Entity, &mut Outline)>, input_focus: Res<InputFocus>) {
+fn focus(mut outline_query: Query<(Entity, &mut Outline)>, input_focus: Res<InputFocus>) {
     // Return if input focus has not changed
     if !input_focus.is_changed() {
         return;
     }
 
     // Change outline color based on focus
-    for (entity, mut outline) in outline_q.iter_mut() {
+    for (entity, mut outline) in outline_query.iter_mut() {
         if input_focus.0.is_some_and(|active| active == entity) {
             outline.color = OUTLINE_COLOR_ACTIVE.into();
         } else {
@@ -108,20 +108,20 @@ fn focus(mut outline_q: Query<(Entity, &mut Outline)>, input_focus: Res<InputFoc
 }
 
 /// Update outline color on input error
-fn on_error(mut msgs: MessageReader<InputError>, mut outline_q: Query<(Entity, &mut Outline)>) {
+fn on_error(mut msgs: MessageReader<InputError>, mut outline_query: Query<(Entity, &mut Outline)>) {
     for msg in msgs.read() {
         // Find outline matching entity from outline query and set color
-        if let Some((_entity, mut outline)) = outline_q.iter_mut().find(|(e, _name)| *e == msg.0) {
+        if let Some((_e, mut outline)) = outline_query.iter_mut().find(|(e, _name)| *e == msg.0) {
             outline.color = OUTLINE_COLOR_ERROR.into();
         }
     }
 }
 
 /// Update outline color on used input
-fn on_used(mut msgs: MessageReader<InputUsed>, mut outline_q: Query<(Entity, &mut Outline)>) {
+fn on_used(mut msgs: MessageReader<InputUsed>, mut outline_query: Query<(Entity, &mut Outline)>) {
     for msg in msgs.read() {
         // Find outline matching entity from outline query and set color
-        if let Some((_entity, mut outline)) = outline_q.iter_mut().find(|(e, _name)| *e == msg.0) {
+        if let Some((_e, mut outline)) = outline_query.iter_mut().find(|(e, _name)| *e == msg.0) {
             outline.color = OUTLINE_COLOR_ACTIVE.into();
         }
     }

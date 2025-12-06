@@ -42,9 +42,9 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(Message)]
 struct Renamed {
     /// [`Entity`] of the [`Npc`]
-    npc_e: Entity,
+    npc_entity: Entity,
     /// [`Entity`] of name output
-    name_output_e: Entity,
+    name_output_entity: Entity,
     /// Text from input submission
     text: String,
 }
@@ -77,14 +77,14 @@ struct RenameMarker;
 
 /// Spawn name input for creating a new [`Npc`]
 fn setup(
-    grid_q: Single<Entity, With<GridMarker0>>,
+    grid_query: Single<Entity, With<GridMarker0>>,
     mut commands: Commands,
     assets: Res<AssetServer>,
 ) {
-    let grid_e = grid_q.entity();
+    let grid_entity = grid_query.entity();
 
-    // Spawn as child of grid_e
-    commands.entity(grid_e).with_children(|commands| {
+    // Spawn as child of grid_entity
+    commands.entity(grid_entity).with_children(|commands| {
         commands.spawn(Text::new("Enter name"));
         commands
             .spawn(input(&assets, "Create Npc"))
@@ -94,8 +94,8 @@ fn setup(
 
 /// Create the name inputs for renaming every [`Npc`]
 fn spawn_rename(
-    grid_q: Single<Entity, With<GridMarker1>>,
-    npc_q: Query<(Entity, &Name), With<Npc>>,
+    grid_query: Single<Entity, With<GridMarker1>>,
+    npc_query: Query<(Entity, &Name), With<Npc>>,
     mut commands: Commands,
     mut input_map: ResMut<InputMap>,
     mut output_map: ResMut<OutputMap>,
@@ -103,24 +103,27 @@ fn spawn_rename(
 ) {
     // Get npc entity and npc name from npc query
     // This gets any npc that does not have an associated npc in the input map
-    let Some((npc_e, name)) = npc_q.iter().find(|(e, _name)| !input_map.0.contains_key(e)) else {
+    let Some((npc_entity, name)) = npc_query
+        .iter()
+        .find(|(e, _name)| !input_map.0.contains_key(e))
+    else {
         return;
     };
 
-    let grid_e = grid_q.entity();
+    let grid_entity = grid_query.entity();
 
-    // Spawn as child of grid_e
-    commands.entity(grid_e).with_children(|commands| {
+    // Spawn as child of grid_entity
+    commands.entity(grid_entity).with_children(|commands| {
         // Spawn name input and name output
-        let name_input_e = commands
+        let name_input_entity = commands
             .spawn((input(&assets, "Rename Npc"), RenameMarker))
             .insert(input_filter())
             .id();
-        let name_output_e = commands.spawn(Text::new(name.0.as_str())).id();
+        let name_output_entity = commands.spawn(Text::new(name.0.as_str())).id();
 
         // Insert into maps
-        input_map.0.insert(npc_e, name_input_e);
-        output_map.0.insert(npc_e, name_output_e);
+        input_map.0.insert(npc_entity, name_input_entity);
+        output_map.0.insert(npc_entity, name_output_entity);
     });
 }
 
@@ -131,14 +134,14 @@ fn create_on_input(
     mut msgs: MessageReader<InputSubmitted>,
     mut error_msg: MessageWriter<InputError>,
     mut used_msg: MessageWriter<InputUsed>,
-    npc_q: Query<&Name, With<Npc>>,
-    renamed_q: Query<Entity, With<RenameMarker>>,
+    npc_query: Query<&Name, With<Npc>>,
+    renamed_query: Query<Entity, With<RenameMarker>>,
     mut commands: Commands,
 ) {
     for msg in msgs.read() {
         // Continue if targeting a renamed entity
         let entity = msg.entity;
-        if renamed_q.contains(entity) {
+        if renamed_query.contains(entity) {
             continue;
         }
 
@@ -149,7 +152,7 @@ fn create_on_input(
             &mut error_msg,
             &mut used_msg,
             entity,
-            npc_q.iter().any(|npc_name| npc_name.0 == name),
+            npc_query.iter().any(|npc_name| npc_name.0 == name),
         ) {
             continue;
         }
@@ -164,15 +167,15 @@ fn rename_on_input(
     mut error_msg: MessageWriter<InputError>,
     mut renamed_msg: MessageWriter<Renamed>,
     mut used_msg: MessageWriter<InputUsed>,
-    mut npc_q: Query<(Entity, &mut Name), With<Npc>>,
-    renamed_q: Query<Entity, With<RenameMarker>>,
+    mut npc_query: Query<(Entity, &mut Name), With<Npc>>,
+    renamed_query: Query<Entity, With<RenameMarker>>,
     input_map: Res<InputMap>,
     output_map: Res<OutputMap>,
 ) {
     for msg in msgs.read() {
         // Continue if not targeting a renamed entity
         let entity = msg.entity;
-        if !renamed_q.contains(entity) {
+        if !renamed_query.contains(entity) {
             continue;
         }
 
@@ -183,14 +186,14 @@ fn rename_on_input(
             &mut error_msg,
             &mut used_msg,
             entity,
-            npc_q.iter().any(|(_entity, npc_name)| npc_name.0 == name),
+            npc_query.iter().any(|(_e, npc_name)| npc_name.0 == name),
         ) {
             continue;
         }
 
         // Get npc entity and npc name from npc query
         // Find npc matching entity and check that it exists in input map
-        let Some((npc_e, mut npc_name)) = npc_q
+        let Some((npc_entity, mut npc_name)) = npc_query
             .iter_mut()
             .find(|(e, _name)| input_map.get(e).is_some_and(|e| *e == entity))
         else {
@@ -198,15 +201,15 @@ fn rename_on_input(
         };
 
         // Get name output entity from output map
-        let Some(name_output_e) = output_map.get(&npc_e) else {
+        let Some(name_output_entity) = output_map.get(&npc_entity) else {
             continue;
         };
 
         // Mutate npc name and write Renamed message
         npc_name.0 = name.clone();
         renamed_msg.write(Renamed {
-            npc_e,
-            name_output_e: *name_output_e,
+            npc_entity,
+            name_output_entity: *name_output_entity,
             text: name.clone(),
         });
     }
@@ -215,17 +218,17 @@ fn rename_on_input(
 /// Modify text of name output on renamed
 fn on_renamed(
     mut msgs: MessageReader<Renamed>,
-    npc_q: Query<Entity, With<Npc>>,
-    mut text_q: Query<&mut Text>,
+    npc_query: Query<Entity, With<Npc>>,
+    mut text_query: Query<&mut Text>,
 ) {
     for msg in msgs.read() {
         // Continue if not targeting the msg npc entity
-        if !npc_q.contains(msg.npc_e) {
+        if !npc_query.contains(msg.npc_entity) {
             continue;
         }
 
         // Modify text of name output entity via text query
-        if let Ok(mut text) = text_q.get_mut(msg.name_output_e) {
+        if let Ok(mut text) = text_query.get_mut(msg.name_output_entity) {
             text.0 = msg.text.clone();
         }
     }
