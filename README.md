@@ -24,6 +24,10 @@ This repository is not entirely licensed as Apache-2.0.
 - [wasm-server-runner](https://crates.io/crates/wasm-server-runner)
 - [yq](https://archlinux.org/packages/extra/any/yq/)
 
-# Credit
+# Credits
 
-- [Google Fonts](https://fonts.google.com) for fonts
+| Contribution       | Author(s)                                                                                                                                                                                                                                                 |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Code & Structure   | [CC0-1.0](https://creativecommons.org/publicdomain/zero/1.0/legalcode)/[Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0)/[MIT](https://opensource.org/license/MIT) by [bevy_new_2d](https://github.com/TheBevyFlock/bevy_new_2d) and contributors |
+| Code & Game Engine | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0)/[MIT](https://opensource.org/license/MIT) by [bevyengine](https://github.com/bevyengine/bevy) and contributors                                                                                  |
+| Fonts              | [OFL-1.1](https://opensource.org/license/OFL-1.1) by [Google Fonts](https://fonts.google.com)                                                                                                                                                             |
