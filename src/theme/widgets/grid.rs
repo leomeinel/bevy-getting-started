@@ -31,11 +31,11 @@ pub(crate) struct GridMarker1;
 
 /// Spawn a parent [`Bundle`], a bottom [`grid`] and a top [`grid`]
 pub(crate) fn setup(mut commands: Commands) {
-    // Spawn grid_container bundle containing a child bundle with a grid.
-    commands.spawn(grid_container()).with_children(|commands| {
-        commands.spawn((grid(), GridMarker0));
-        commands.spawn((grid(), GridMarker1));
-    });
+    // Spawn grid_container bundle containing a child bundle with grids
+    commands.spawn((
+        grid_container(),
+        children![(grid(), GridMarker0), (grid(), GridMarker1),],
+    ));
 }
 
 /// [`Bundle`] containing grid container
