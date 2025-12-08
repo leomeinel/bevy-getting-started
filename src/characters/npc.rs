@@ -19,7 +19,6 @@ use crate::theme::widgets::{
     text_input::{self, InputError, InputSubmitted, InputUsed},
 };
 
-/// Plugin
 pub(super) fn plugin(app: &mut App) {
     // Add messages
     app.add_message::<Renamed>();

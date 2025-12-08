@@ -14,7 +14,6 @@ pub(crate) mod text_input;
 
 use bevy::prelude::*;
 
-/// Plugin
 pub(crate) fn plugin(app: &mut App) {
     // Add plugins
     app.add_plugins((grid::plugin, text_input::plugin));

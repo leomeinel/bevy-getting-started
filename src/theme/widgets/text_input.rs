@@ -14,7 +14,6 @@
 use bevy::{color::palettes::tailwind, input_focus::InputFocus, prelude::*};
 use bevy_ui_text_input::SubmitText;
 
-/// Plugin
 pub(super) fn plugin(app: &mut App) {
     // Add messages
     app.add_message::<InputError>();

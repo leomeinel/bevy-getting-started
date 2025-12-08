@@ -11,7 +11,6 @@
 
 use bevy::prelude::*;
 
-/// Plugin
 pub(super) fn plugin(app: &mut App) {
     // Add startup systems
     app.add_systems(Startup, setup);
