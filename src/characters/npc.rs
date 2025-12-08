@@ -77,11 +77,11 @@ struct RenameMarker;
 
 /// Spawn name input for creating a new [`Npc`]
 fn setup(
-    grid_query: Single<Entity, With<GridMarker0>>,
+    grid: Single<Entity, With<GridMarker0>>,
     mut commands: Commands,
     assets: Res<AssetServer>,
 ) {
-    let grid_entity = grid_query.entity();
+    let grid_entity = grid.entity();
 
     // Spawn as child of grid_entity
     commands.entity(grid_entity).with_children(|commands| {
@@ -94,7 +94,7 @@ fn setup(
 
 /// Create the name inputs for renaming every [`Npc`]
 fn spawn_rename(
-    grid_query: Single<Entity, With<GridMarker1>>,
+    grid: Single<Entity, With<GridMarker1>>,
     npc_query: Query<(Entity, &Name), With<Npc>>,
     mut commands: Commands,
     mut input_map: ResMut<InputMap>,
@@ -110,7 +110,7 @@ fn spawn_rename(
         return;
     };
 
-    let grid_entity = grid_query.entity();
+    let grid_entity = grid.entity();
 
     // Spawn as child of grid_entity
     commands.entity(grid_entity).with_children(|commands| {
