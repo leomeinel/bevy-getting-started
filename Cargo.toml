@@ -22,7 +22,8 @@ tracing = { version = "0.1", features = [
 default = ["dev_native"]
 dev = [
  # Improve compile times for dev builds by linking Bevy as a dynamic library.
- "bevy/dynamic_linking",
+ # NOTE: This is disabled because of frequent linker errors
+ # "bevy/dynamic_linking",
  "bevy/bevy_dev_tools",
  "bevy/bevy_ui_debug",
  # Improve error messages coming from Bevy
