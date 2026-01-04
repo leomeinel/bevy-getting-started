@@ -2,7 +2,7 @@
  * File: text_input.rs
  * Author: Leopold Johannes Meinel (leo@meinel.dev)
  * -----
- * Copyright (c) 2025 Leopold Johannes Meinel & contributors
+ * Copyright (c) 2026 Leopold Johannes Meinel & contributors
  * SPDX ID: Apache-2.0
  * URL: https://www.apache.org/licenses/LICENSE-2.0
  * -----
@@ -90,14 +90,14 @@ fn on_submit(
 }
 
 /// Update outline color based on focus
-fn focus(mut query: Query<(Entity, &mut Outline)>, input_focus: Res<InputFocus>) {
+fn focus(query: Query<(Entity, &mut Outline)>, input_focus: Res<InputFocus>) {
     // Return if input focus has not changed
     if !input_focus.is_changed() {
         return;
     }
 
     // Change outline color based on focus
-    for (entity, mut outline) in query.iter_mut() {
+    for (entity, mut outline) in query {
         if input_focus.0.is_some_and(|active| active == entity) {
             outline.color = OUTLINE_COLOR_ACTIVE.into();
         } else {
