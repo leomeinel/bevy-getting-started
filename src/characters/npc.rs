@@ -24,8 +24,8 @@ pub(super) fn plugin(app: &mut App) {
     app.add_message::<Renamed>();
 
     // Insert resources
-    app.insert_resource(InputMap::default());
-    app.insert_resource(OutputMap::default());
+    app.init_resource::<InputMap>();
+    app.init_resource::<OutputMap>();
 
     // Add startup systems
     app.add_systems(Startup, setup.after(grid::setup));
